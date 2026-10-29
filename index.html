@@ -1,0 +1,1172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>O que ver hoje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f; --bg2:#14141c; --card:#1b1b25; --line:rgba(255,255,255,.08);
+  --text:#f5f5f7; --muted:#9b9bab; --accent:#ff5b4a; --accent2:#ff8a3d; --imdb:#f5c518;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+input{font:inherit;color:inherit}
+svg{display:block;flex:none}
+
+/* ---------- Liquid glass ---------- */
+.glass{
+  position:relative;
+  background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.04));
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(255,255,255,.05),0 8px 30px rgba(0,0,0,.3);
+}
+
+/* ---------- Top bar ---------- */
+.topbar{position:fixed;inset:0 0 auto 0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--safe-t) + 12px) 16px 12px;transition:background .35s,border-color .35s;border-bottom:1px solid transparent}
+.topbar.solid{background:rgba(10,10,15,.6);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border-color:var(--line)}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none}
+.spacer{width:44px;flex:none}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;width:196px;height:46px;border-radius:999px;padding:4px}
+.seg button{position:relative;z-index:1;font-weight:700;font-size:14px;color:rgba(255,255,255,.62);transition:color .35s}
+.seg button.on{color:#fff}
+.seg .thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.1));
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.7),inset 0 -2px 4px rgba(255,255,255,.12),0 4px 16px rgba(0,0,0,.3),0 0 0 .5px rgba(255,255,255,.35);
+  backdrop-filter:blur(4px) saturate(220%) brightness(1.15);-webkit-backdrop-filter:blur(4px) saturate(220%) brightness(1.15);
+  transition:transform .6s cubic-bezier(.34,1.56,.64,1)}
+.seg[data-type="tv"] .thumb{transform:translateX(100%)}
+.seg .thumb.goo{animation:goo .6s ease}
+@keyframes goo{0%{scale:1 1}30%{scale:1.28 .82}65%{scale:.94 1.06}100%{scale:1 1}}
+
+/* ---------- Generated poster art (fallback sem imagem) ---------- */
+.art{position:relative;overflow:hidden;
+  background:
+    radial-gradient(120% 80% at 18% 8%,hsl(var(--h1) 78% 52% / .85),transparent 60%),
+    radial-gradient(90% 70% at 92% 82%,hsl(var(--h2) 80% 46% / .75),transparent 62%),
+    linear-gradient(170deg,hsl(var(--h1) 45% 16%),hsl(var(--h2) 55% 6%))}
+.art::before{content:"";position:absolute;inset:0;opacity:.22;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-bg img{object-position:center 22%}
+/* desfoque progressivo só onde há texto */
+.veil{position:absolute;left:0;right:0;bottom:0;height:60%;z-index:1;pointer-events:none;
+  backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
+  -webkit-mask-image:linear-gradient(to top,#000 50%,transparent);mask-image:linear-gradient(to top,#000 50%,transparent);
+  background:linear-gradient(to top,rgba(10,10,15,.8),rgba(10,10,15,.3) 65%,transparent)}
+@media (min-width:900px){.hero .veil{height:100%;right:auto;width:62%;
+  -webkit-mask-image:linear-gradient(to right,#000 45%,transparent);mask-image:linear-gradient(to right,#000 45%,transparent);
+  background:linear-gradient(to right,rgba(10,10,15,.75),transparent)}}
+.has-img .poster-t,.has-img .big{display:none}
+.big{position:absolute;left:-3%;right:-3%;top:16%;font-size:clamp(84px,28vw,240px);font-weight:800;line-height:.86;letter-spacing:-.045em;
+  text-transform:uppercase;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.16);overflow-wrap:anywhere}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;height:100svh;min-height:620px;overflow:hidden;cursor:pointer}
+.hero-bg{position:absolute;inset:0;animation:kb 26s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.14) translateY(-1.5%)}}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(10,10,15,.55) 0%,transparent 16%,transparent 70%,var(--bg) 100%)}
+.hero-content{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 20px calc(var(--safe-b) + 76px);max-width:680px;cursor:default}
+.swap{animation:rise .7s var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 13px;border-radius:999px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,91,74,.6)}100%{box-shadow:0 0 0 9px rgba(255,91,74,0)}}
+.hero h1{font-size:clamp(40px,11.5vw,72px);line-height:.96;font-weight:800;letter-spacing:-.035em;margin:16px 0 14px;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px;color:#d9d9e2;font-weight:500}
+.sep{opacity:.4}
+.pf{display:inline-flex;align-items:center;gap:7px;font-weight:700;padding:4px 11px 4px 4px;border-radius:999px;background:rgba(255,255,255,.1)}
+.pl{display:block;flex:none;width:20px;height:20px;border-radius:6px;object-fit:cover;background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.35)}
+.chip .pl{width:18px;height:18px;border-radius:5px}
+.chip:has(.pl){display:inline-flex;align-items:center;gap:8px;padding-left:6px}
+.imdb{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#fff}
+.imdb b{background:var(--imdb);color:#000;font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px;letter-spacing:-.02em}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.chip{font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);color:#e8e8ee;background:rgba(255,255,255,.04);transition:.2s}
+.chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+.reason{margin-top:14px;font-size:13px;color:#b9b9c6;display:flex;gap:8px;align-items:center}
+.reason svg{color:var(--accent2)}
+.actions{display:flex;gap:10px;margin-top:20px;align-items:center}
+.btn{height:54px;padding:0 22px;border-radius:999px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:transform .15s}
+.btn:active,.round:active,.icon-btn:active{transform:scale(.96)}
+.btn-primary{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 12px 30px rgba(255,91,74,.35)}
+.round{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex:none;transition:transform .15s,color .2s}
+.on>svg path{fill:currentColor}
+.round.on,.icon-btn.on{color:var(--accent)}
+.scroll-hint{position:absolute;left:50%;bottom:calc(var(--safe-b) + 14px);z-index:3;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.scroll-hint svg{animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(5px)}}
+
+/* ---------- Top 10 ---------- */
+.tops{padding:12px 0 calc(var(--safe-b) + 48px)}
+.tops-head{padding:0 20px}
+.tops-head h2{font-size:28px;font-weight:800;letter-spacing:-.025em}
+.tops-head p{color:var(--muted);font-size:13px;margin-top:4px}
+.searchbar{display:flex;align-items:center;gap:10px;margin:18px 20px 0;width:calc(100% - 40px);height:52px;padding:0 16px;border-radius:16px;
+  background:var(--bg2);border:1px solid var(--line);color:var(--muted);font-size:14px;text-align:left}
+.row{margin-top:30px}
+.row-head{display:flex;align-items:center;gap:12px;padding:0 20px;margin-bottom:14px}
+.row-head .pl{width:38px;height:38px;border-radius:11px}
+.row-head small{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-top:1px}
+.logo{height:28px;padding:0 10px;border-radius:8px;background:var(--pc);font-weight:800;font-size:13px;display:grid;place-items:center;color:#fff;letter-spacing:-.01em;white-space:nowrap}
+.row-head h3{font-size:17px;font-weight:700;white-space:nowrap}
+.rail{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 20px 10px;scrollbar-width:none;scroll-padding:0 20px}
+.rail::-webkit-scrollbar{display:none}
+.rank{flex:none;display:flex;align-items:flex-end;scroll-snap-align:start;cursor:pointer}
+.rank .n{font-size:112px;font-weight:800;line-height:.74;letter-spacing:-.08em;color:var(--bg);-webkit-text-stroke:2px rgba(255,255,255,.32);margin-right:-8px}
+.rank .poster{width:120px}
+.rank:first-child .n{-webkit-text-stroke-color:var(--accent)}
+.poster{position:relative;aspect-ratio:2/3;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.45);transition:transform .25s var(--ease)}
+.rank:active .poster,.sim:active .poster,.gitem:active .poster{transform:scale(.96)}
+.poster-t{position:absolute;left:10px;right:10px;bottom:10px;font-weight:800;font-size:14px;line-height:1.1;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.score{position:absolute;top:8px;right:8px;z-index:1;font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.score::before{content:"★ ";color:var(--imdb)}
+
+/* ---------- Drawer ---------- */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;bottom:0;left:0;z-index:50;width:min(84vw,330px);display:flex;flex-direction:column;
+  padding:calc(var(--safe-t) + 20px) 16px calc(var(--safe-b) + 20px);border-radius:0 28px 28px 0;
+  background:rgba(20,20,28,.74);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  border-right:1px solid rgba(255,255,255,.1);transform:translateX(-105%);transition:transform .45s var(--ease)}
+.drawer.on{transform:none}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.brand i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));font-style:normal}
+.me{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:rgba(255,255,255,.06);margin-bottom:14px;text-align:left;width:100%}
+.me b{display:block;font-size:15px}
+.me small{color:var(--muted);font-size:12px}
+.avatar{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--accent),#7c4dff);flex:none}
+.nav button{display:flex;align-items:center;gap:14px;width:100%;padding:14px 12px;border-radius:14px;font-weight:600;font-size:15px;text-align:left;transition:background .2s}
+.nav button:hover,.nav button:active{background:rgba(255,255,255,.07)}
+.nav svg{color:var(--muted)}
+.badge{margin-left:auto;font-size:12px;font-weight:700;background:var(--accent);border-radius:999px;padding:2px 9px}
+.drawer-foot{margin-top:auto;padding:0 8px;font-size:12px;color:var(--muted);line-height:1.5}
+.drawer-foot .chips{margin:8px 0 14px}
+.drawer-foot .chip{font-size:11px;padding:5px 9px}
+
+/* ---------- Detail sheet ---------- */
+.sheet,.page{position:fixed;inset:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet{z-index:60;transform:translateY(100%);transition:transform .55s var(--ease)}
+.page{z-index:55;transform:translateX(100%);transition:transform .45s var(--ease)}
+.sheet.on,.page.on{transform:none}
+.d-hero{height:78svh;min-height:480px}
+.d-hero .veil{height:55%}
+.d-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,15,.5),transparent 20%,transparent 70%,var(--bg))}
+.d-top{position:absolute;top:calc(var(--safe-t) + 12px);left:16px;right:16px;display:flex;justify-content:space-between;z-index:3}
+.d-body{position:relative;z-index:2;margin:-190px auto 0;padding:0 20px;max-width:720px}
+.type-tag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2)}
+.d-body h2{font-size:clamp(32px,9vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:8px;text-wrap:balance}
+.orig{color:var(--muted);font-size:13px;margin-top:6px}
+.where{display:flex;align-items:center;gap:14px;margin-top:22px;padding:14px;border-radius:20px;background:var(--bg2);border:1px solid var(--line)}
+.where .logo{width:46px;height:46px;border-radius:14px;font-size:15px;padding:0}
+.where .pl{width:46px;height:46px;border-radius:13px}
+.where small{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+.where b{font-size:17px}
+.where>svg{margin-left:auto;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.fact{padding:14px 12px;border-radius:18px;background:var(--bg2);border:1px solid var(--line)}
+.fact small{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.fact b{font-size:16px;display:flex;align-items:center;gap:6px}
+.fact em{font-style:normal;font-size:12px;color:var(--muted);font-weight:600}
+.fact .imdb b{font-size:9px}
+.d-sec{margin-top:26px}
+.d-sec h4{font-size:16px;font-weight:800;margin-bottom:10px}
+.d-sec .chips{margin-top:0}
+.syn{font-size:15px;line-height:1.65;color:#cfcfd9}
+.sim{flex:none;width:112px;scroll-snap-align:start;cursor:pointer}
+.sim p,.gitem p{font-size:12px;font-weight:600;margin-top:8px;line-height:1.25;color:#d5d5de}
+.d-rail{max-width:760px;margin:0 auto;padding-bottom:calc(var(--safe-b) + 40px)}
+
+/* ---------- Pages ---------- */
+.page-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:calc(var(--safe-t) + 12px) 16px 12px;
+  background:rgba(10,10,15,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line)}
+.page-head h2{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.page-body{padding:16px 20px calc(var(--safe-b) + 40px);max-width:720px;margin:0 auto}
+.prof-top{display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 0 6px}
+.prof-top .avatar{width:92px;height:92px;font-size:32px;box-shadow:0 12px 40px rgba(255,91,74,.35)}
+.prof-top b{font-size:20px;margin-top:12px}
+.prof-top small{color:var(--muted);font-size:13px;margin-top:2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.stats div{padding:12px;border-radius:16px;background:var(--bg2);border:1px solid var(--line);text-align:center}
+.stats b{display:block;font-size:20px}
+.stats small{font-size:11px;color:var(--muted);font-weight:600}
+.field{margin-top:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.field input{width:100%;height:52px;margin-top:7px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);padding:0 14px;outline:none;font-size:15px;transition:border-color .2s}
+.field input:focus{border-color:var(--accent)}
+.field input::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5}
+.sec-t{margin-top:30px;font-size:16px;font-weight:800}
+.sec-p{font-size:13px;color:var(--muted);margin-top:4px}
+.save-bar{position:sticky;bottom:0;padding:16px 0 calc(var(--safe-b) + 8px);background:linear-gradient(transparent,var(--bg) 30%)}
+.save-bar .btn{width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:14px 12px}
+.gitem{cursor:pointer}
+.empty{text-align:center;padding:70px 20px;color:var(--muted)}
+.empty .ic{width:72px;height:72px;margin:0 auto 16px;border-radius:24px;display:grid;place-items:center;background:var(--bg2);border:1px solid var(--line);color:var(--accent)}
+.empty b{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
+.empty .btn{margin-top:20px;flex:none}
+.sinput{flex:1;display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);color:var(--muted)}
+.sinput input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-size:15px}
+.res{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.res .poster{width:62px;border-radius:10px;flex:none;box-shadow:none}
+.res .poster-t{font-size:9px;left:6px;right:6px;bottom:6px}
+.res .score{display:none}
+.res-info{flex:1;min-width:0}
+.res-info h4{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-info .meta{font-size:12px;margin-top:6px;gap:6px 10px}
+.res-info .pf{padding:2px 8px 2px 2px}
+.res-info .pf .pl{width:16px;height:16px;border-radius:5px}
+.res-info p{font-size:12px;color:var(--muted);margin-top:6px}
+.res .round{width:42px;height:42px;background:var(--bg2);border:1px solid var(--line)}
+.label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin:18px 0 4px}
+
+.skel{background:linear-gradient(100deg,#16161f 30%,#242431 50%,#16161f 70%);background-size:200% 100%;animation:shim 1.3s linear infinite}
+.hero-bg.skel{animation:shim 1.3s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+.sk-line{height:14px;border-radius:8px;margin-top:10px}
+.imdb.tm b{background:#01b4e4;color:#fff}
+.toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);z-index:90;transform:translate(-50%,140%);opacity:0;padding:13px 18px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.toast.on{transform:translate(-50%,0);opacity:1}
+
+@media (min-width:900px){
+  .hero-content{padding:0 56px 104px}
+  .tops-head,.row-head{padding:0 56px}
+  .searchbar{margin:18px 56px 0;width:min(560px,calc(100% - 112px))}
+  .rail{padding:4px 56px 10px;scroll-padding:0 56px}
+  .rank .poster{width:150px}
+  .rank .n{font-size:140px}
+  .topbar{padding-left:32px;padding-right:32px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <button class="icon-btn glass" id="menuBtn" aria-label="Abrir menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg>
+  </button>
+  <div class="seg glass" id="seg" role="tablist" aria-label="Tipo de conteúdo">
+    <span class="thumb" id="thumb"></span>
+    <button data-type="movie" role="tab">Filme</button>
+    <button data-type="tv" role="tab">Série</button>
+  </div>
+  <span class="spacer"></span>
+</header>
+
+<main>
+  <section class="hero" id="hero" aria-label="Recomendação do dia"></section>
+  <section class="tops" id="tops" aria-label="Top 10 por plataforma"></section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Menu"></aside>
+<section class="sheet" id="detail" aria-label="Detalhes"></section>
+
+<section class="page" id="page-profile">
+  <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Meu perfil</h2></div>
+  <div class="page-body" id="profileBody"></div>
+</section>
+
+<section class="page" id="page-saved">
+  <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Assistir depois</h2></div>
+  <div class="page-body" id="savedBody"></div>
+</section>
+
+<section class="page" id="page-search">
+  <div class="page-head">
+    <button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <label class="sinput"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Filme, série ou gênero…" autocomplete="off" enterkeyhint="search"></label>
+  </div>
+  <div class="page-body" id="searchBody"></div>
+</section>
+
+<div class="toast glass" id="toast" role="status"></div>
+
+<script>
+/* ================= Dados (exemplo) =================
+   [título PT, título original, ano, nota IMDb, gêneros, duração/temporadas, sinopse] */
+const PLATFORMS = {
+  netflix:{logo:'rK1KljqmbvO9HQa1PBFLILWah72',name:'Netflix',short:'N',prep:'na',color:'#E50914',ids:'8',url:q=>`https://www.netflix.com/search?q=${q}`},
+  prime:{logo:'gMZdpavHmxFNnLpMHwVxfqeux2g',name:'Prime Video',short:'P',prep:'no',color:'#1A98FF',ids:'119',url:q=>`https://www.primevideo.com/search/?phrase=${q}`},
+  disney:{logo:'5eZ872CghnHFLB1j8grszbrx0dx',name:'Disney+',short:'D+',prep:'no',color:'#1B3FD6',ids:'337',url:q=>`https://www.disneyplus.com/pt-br/search?q=${q}`},
+  hbo:{logo:'skypuy7SXuugIQeYg0IglmzoKaS',name:'HBO Max',short:'HBO',prep:'na',color:'#7B2CF5',ids:'1899|384',url:q=>`https://play.hbomax.com/search?q=${q}`},
+  apple:{logo:'9icYBfYFcwgCbky5VdGUIKJ4C5i',name:'Apple TV',short:'tv',prep:'na',color:'#48484A',ids:'350',url:q=>`https://tv.apple.com/br/search?term=${q}`},
+  paramount:{logo:'pkx3klJlwW5JdtaulvDx6hDNtch',name:'Paramount+',short:'P+',prep:'no',color:'#0064FF',ids:'531',url:q=>`https://www.paramountplus.com/br/search/?q=${q}`}
+};
+const GENRES = ['Ação','Aventura','Animação','Comédia','Crime','Documentário','Drama','Família','Fantasia','Ficção científica','Guerra','Mistério','Romance','Suspense','Terror'];
+
+const RAW = {
+  netflix:{
+    movie:[
+      ['Alerta Vermelho','Red Notice',2021,6.3,'Ação,Comédia','1h 58min','Um agente do FBI precisa se aliar ao ladrão de arte mais procurado do mundo para capturar uma criminosa ainda mais esperta, numa caçada pelos três ovos lendários de Cleópatra.'],
+      ['Não Olhe para Cima',"Don't Look Up",2021,7.2,'Comédia,Ficção científica','2h 18min','Dois astrônomos descobrem um cometa em rota de colisão com a Terra e tentam alertar uma humanidade distraída por política, celebridades e redes sociais.'],
+      ['Bird Box','Bird Box',2018,6.6,'Terror,Suspense','2h 4min','Depois que uma presença misteriosa passa a levar ao desespero quem a vê, uma mãe atravessa um rio de olhos vendados com duas crianças em busca de refúgio.'],
+      ['O Irlandês','The Irishman',2019,7.8,'Crime,Drama','3h 29min','Um veterano de guerra relembra décadas trabalhando para a máfia e sua ligação com o desaparecimento do sindicalista Jimmy Hoffa.'],
+      ['Glass Onion','Glass Onion',2022,7.1,'Mistério,Comédia','2h 19min','O detetive Benoit Blanc é convidado para a ilha grega de um bilionário excêntrico, onde um jogo de assassinato acaba virando crime de verdade.'],
+      ['Resgate','Extraction',2020,6.7,'Ação,Suspense','1h 56min','Um mercenário sem nada a perder é contratado para resgatar o filho sequestrado de um chefão do crime em Daca.'],
+      ['Nada de Novo no Front','All Quiet on the Western Front',2022,7.8,'Guerra,Drama','2h 28min','Um jovem soldado alemão se alista cheio de entusiasmo e descobre o horror das trincheiras da Primeira Guerra Mundial.'],
+      ['Enola Holmes','Enola Holmes',2020,6.6,'Mistério,Aventura','2h 3min','A irmã caçula de Sherlock Holmes parte sozinha para Londres atrás da mãe desaparecida e se envolve numa conspiração.'],
+      ['O Poço','The Platform',2019,7.0,'Terror,Ficção científica','1h 34min','Numa prisão vertical, uma plataforma de comida desce andar por andar — e quem está embaixo só come o que sobra dos de cima.'],
+      ['Roma','Roma',2018,7.7,'Drama','2h 15min','Na Cidade do México dos anos 70, a rotina de uma empregada doméstica se entrelaça com a crise de uma família de classe média.']
+    ],
+    tv:[
+      ['Stranger Things','Stranger Things',2016,8.7,'Ficção científica,Terror','4 temporadas','Em Hawkins, o sumiço de um garoto revela experimentos secretos, forças sobrenaturais e uma menina com poderes misteriosos.'],
+      ['Round 6','Squid Game',2021,8.0,'Suspense,Drama','3 temporadas','Centenas de pessoas endividadas aceitam disputar jogos infantis por um prêmio milionário. Quem perde, não sai vivo.'],
+      ['Wandinha','Wednesday',2022,8.0,'Comédia,Mistério','2 temporadas','Wandinha Addams investiga uma série de assassinatos enquanto tenta sobreviver ao novo internato, a Escola Nunca Mais.'],
+      ['Dark','Dark',2017,8.7,'Ficção científica,Mistério','3 temporadas','O desaparecimento de crianças numa cidadezinha alemã expõe segredos de quatro famílias e uma viagem no tempo que conecta gerações.'],
+      ['La Casa de Papel','Money Heist',2017,8.2,'Crime,Suspense','5 partes','Um gênio conhecido como Professor reúne oito criminosos para executar o maior assalto da história da Espanha.'],
+      ['The Crown','The Crown',2016,8.6,'Drama','6 temporadas','A trajetória da rainha Elizabeth II, dos primeiros anos de reinado às crises da família real no fim do século XX.'],
+      ['Bebê Rena','Baby Reindeer',2024,7.7,'Drama,Suspense','Minissérie','Um comediante em início de carreira oferece uma xícara de chá a uma desconhecida e passa a ser perseguido por ela.'],
+      ['Ozark','Ozark',2017,8.5,'Crime,Drama','4 temporadas','Um consultor financeiro muda a família para os lagos do Missouri para lavar dinheiro de um cartel mexicano.'],
+      ['Black Mirror','Black Mirror',2011,8.7,'Ficção científica,Suspense','7 temporadas','Episódios independentes sobre o lado sombrio da tecnologia e o que ela revela sobre nós.'],
+      ['O Gambito da Rainha',"The Queen's Gambit",2020,8.5,'Drama','Minissérie','Uma órfã prodígio do xadrez enfrenta os maiores enxadristas do mundo enquanto luta contra os próprios vícios.']
+    ]
+  },
+  prime:{
+    movie:[
+      ['Saltburn','Saltburn',2023,7.0,'Suspense,Drama','2h 11min','Um bolsista de Oxford é convidado a passar o verão na mansão da família aristocrática de um colega — e se torna obcecado por ela.'],
+      ['A Guerra do Amanhã','The Tomorrow War',2021,6.5,'Ação,Ficção científica','2h 18min','Soldados do futuro chegam ao presente pedindo reforços: daqui a 30 anos, a humanidade está perdendo uma guerra contra alienígenas.'],
+      ['Air: A História por Trás do Logo','Air',2023,7.4,'Drama','1h 51min','Como um executivo da Nike apostou tudo para convencer um jovem Michael Jordan a assinar com a marca.'],
+      ['Manchester à Beira-Mar','Manchester by the Sea',2016,7.8,'Drama','2h 17min','Um zelador solitário volta à cidade natal para cuidar do sobrinho após a morte do irmão e precisa encarar o próprio passado.'],
+      ['O Som do Silêncio','Sound of Metal',2019,7.7,'Drama','2h','Um baterista de heavy metal começa a perder a audição e precisa reinventar a vida.'],
+      ['Road House','Road House',2024,6.2,'Ação','2h 1min','Um ex-lutador do UFC vira segurança de um bar nas Florida Keys e descobre que o lugar é alvo de gente perigosa.'],
+      ['Uma Noite em Miami','One Night in Miami',2020,7.1,'Drama','1h 54min','Muhammad Ali, Malcolm X, Sam Cooke e Jim Brown passam uma noite juntos discutindo fama, fé e direitos civis.'],
+      ['Sem Remorso','Without Remorse',2021,5.8,'Ação,Suspense','1h 49min','Um militar de elite busca vingança após o assassinato da esposa e descobre uma conspiração internacional.'],
+      ['Borat: Fita de Cinema Seguinte','Borat Subsequent Moviefilm',2020,6.6,'Comédia','1h 36min','O jornalista cazaque volta aos EUA com a filha numa missão absurda que expõe o país às vésperas da eleição.'],
+      ['Operação Natal','Red One',2024,6.7,'Ação,Comédia','2h 3min','Quando o Papai Noel é sequestrado, o chefe de segurança do Polo Norte se une a um caçador de recompensas para salvar o Natal.']
+    ],
+    tv:[
+      ['The Boys','The Boys',2019,8.7,'Ação,Comédia','4 temporadas','Um grupo de justiceiros decide enfrentar super-heróis corruptos que abusam da fama e dos próprios poderes.'],
+      ['Fallout','Fallout',2024,8.3,'Ficção científica,Aventura','1 temporada','Duzentos anos após o apocalipse nuclear, uma moradora de um abrigo subterrâneo sai pela primeira vez para o mundo devastado.'],
+      ['Reacher','Reacher',2022,8.0,'Ação,Crime','3 temporadas','Um ex-investigador militar andarilho chega a uma cidadezinha e é acusado de um assassinato que não cometeu.'],
+      ['Invencível','Invincible',2021,8.7,'Animação,Ação','3 temporadas','Filho do super-herói mais poderoso da Terra, Mark desenvolve seus poderes e descobre que o legado do pai é mais sombrio do que parece.'],
+      ['Os Anéis de Poder','The Rings of Power',2022,6.9,'Fantasia,Aventura','2 temporadas','Milhares de anos antes de O Hobbit, a Terra-média vê o surgimento dos anéis e o retorno de um mal antigo.'],
+      ['Jack Ryan','Jack Ryan',2018,8.0,'Ação,Suspense','4 temporadas','Um analista da CIA é tirado da mesa de trabalho e lançado em missões de campo perigosas pelo mundo.'],
+      ['Fleabag','Fleabag',2016,8.7,'Comédia,Drama','2 temporadas','Uma londrina caótica e irreverente tenta lidar com o luto, a família e a vida amorosa — sempre falando com a câmera.'],
+      ['Belas Maldições','Good Omens',2019,8.0,'Fantasia,Comédia','2 temporadas','Um anjo e um demônio que se acostumaram à vida na Terra se unem para impedir o apocalipse.'],
+      ['Maravilhosa Sra. Maisel','The Marvelous Mrs. Maisel',2017,8.7,'Comédia,Drama','5 temporadas','Nos anos 50, uma dona de casa de Nova York descobre um talento inesperado para a comédia stand-up.'],
+      ['Sr. & Sra. Smith','Mr. & Mrs. Smith',2024,7.3,'Ação,Comédia','1 temporada','Dois desconhecidos são contratados por uma agência secreta para viver como casal e cumprir missões de espionagem.']
+    ]
+  },
+  disney:{
+    movie:[
+      ['Divertida Mente 2','Inside Out 2',2024,7.6,'Animação,Família','1h 36min','Riley entra na adolescência e novas emoções, lideradas pela Ansiedade, chegam para bagunçar a sala de controle.'],
+      ['Deadpool & Wolverine','Deadpool & Wolverine',2024,7.6,'Ação,Comédia','2h 8min','Deadpool é recrutado pela TVA e precisa convencer um Wolverine nada animado a salvar o seu universo.'],
+      ['Avatar: O Caminho da Água','Avatar: The Way of Water',2022,7.5,'Ficção científica,Aventura','3h 12min','Jake Sully e Neytiri buscam refúgio com os filhos entre os clãs dos oceanos de Pandora quando uma antiga ameaça retorna.'],
+      ['Pobres Criaturas','Poor Things',2023,7.8,'Comédia,Fantasia','2h 21min','Trazida de volta à vida por um cientista excêntrico, Bella parte numa jornada pelo mundo em busca de liberdade.'],
+      ['Viva: A Vida é uma Festa','Coco',2017,8.4,'Animação,Família','1h 45min','Um garoto apaixonado por música vai parar na Terra dos Mortos e precisa descobrir a verdadeira história da família.'],
+      ['Soul','Soul',2020,8.0,'Animação,Comédia','1h 40min','Um professor de música que sonha com o jazz vai parar num plano espiritual e precisa ajudar uma alma a encontrar seu propósito.'],
+      ['Vingadores: Ultimato','Avengers: Endgame',2019,8.4,'Ação,Ficção científica','3h 1min','Após o estalo de Thanos, os heróis restantes se reúnem para uma última missão capaz de desfazer a tragédia.'],
+      ['Free Guy','Free Guy',2021,7.1,'Comédia,Ação','1h 55min','Um caixa de banco descobre que é um personagem secundário de um videogame e decide virar o herói da própria história.'],
+      ['Encanto','Encanto',2021,7.2,'Animação,Família','1h 42min','Na Colômbia, a única Madrigal sem dons mágicos pode ser a última esperança da família quando a magia começa a sumir.'],
+      ['Luca','Luca',2021,7.4,'Animação,Aventura','1h 35min','Dois monstros marinhos vivem um verão inesquecível numa cidade costeira italiana, escondendo sua verdadeira forma.']
+    ],
+    tv:[
+      ['O Urso','The Bear',2022,8.5,'Drama,Comédia','3 temporadas','Um chef premiado volta a Chicago para assumir a lanchonete caótica da família após uma tragédia.'],
+      ['Xógum','Shōgun',2024,8.6,'Drama,Aventura','1 temporada','No Japão de 1600, um navegador inglês naufraga e se vê no centro de uma guerra de poder entre senhores feudais.'],
+      ['The Mandalorian','The Mandalorian',2019,8.6,'Ficção científica,Aventura','3 temporadas','Um caçador de recompensas solitário atravessa a galáxia protegendo uma misteriosa criança com poderes da Força.'],
+      ['Andor','Andor',2022,8.5,'Ficção científica,Suspense','2 temporadas','A transformação de um ladrão sem causa em um dos rebeldes que desafiaram o Império.'],
+      ['Loki','Loki',2021,8.2,'Fantasia,Ação','2 temporadas','Capturado pela TVA, o deus da trapaça é obrigado a consertar linhas do tempo que ele mesmo ajudou a quebrar.'],
+      ['Only Murders in the Building','Only Murders in the Building',2021,8.1,'Comédia,Mistério','4 temporadas','Três vizinhos fanáticos por true crime investigam um assassinato no prédio — e gravam um podcast sobre isso.'],
+      ['WandaVision','WandaVision',2021,7.9,'Fantasia,Mistério','Minissérie','Wanda e Visão vivem uma vida perfeita no estilo sitcom… até que a realidade começa a rachar.'],
+      ['Abbott Elementary','Abbott Elementary',2021,8.2,'Comédia','4 temporadas','Professores dedicados de uma escola pública da Filadélfia fazem de tudo pelos alunos, apesar da falta de recursos.'],
+      ['Percy Jackson e os Olimpianos','Percy Jackson and the Olympians',2023,6.9,'Fantasia,Aventura','1 temporada','Um garoto de 12 anos descobre ser filho de um deus grego e parte numa missão para evitar uma guerra no Olimpo.'],
+      ['American Horror Story','American Horror Story',2011,7.9,'Terror,Suspense','12 temporadas','Antologia de terror em que cada temporada traz uma nova história macabra, de casas assombradas a hospícios.']
+    ]
+  },
+  hbo:{
+    movie:[
+      ['Duna: Parte Dois','Dune: Part Two',2024,8.5,'Ficção científica,Aventura','2h 46min','Paul Atreides se une aos Fremen em Arrakis para vingar a família, enquanto tenta impedir um futuro terrível que só ele consegue enxergar.'],
+      ['Coringa','Joker',2019,8.4,'Crime,Drama','2h 2min','Ignorado pela sociedade, um comediante fracassado de Gotham mergulha numa espiral de violência que o transforma num símbolo do caos.'],
+      ['Batman','The Batman',2022,7.8,'Crime,Ação','2h 56min','Em seu segundo ano como vigilante, Batman segue as pistas de um assassino que tem como alvo a elite corrupta de Gotham.'],
+      ['Barbie','Barbie',2023,6.8,'Comédia,Fantasia','1h 54min','Barbie vive o dia perfeito na Barbielândia até começar a ter pensamentos sobre a morte — e precisa ir ao mundo real para entender o que está acontecendo.'],
+      ['Pecadores','Sinners',2025,7.6,'Terror,Drama','2h 17min','Gêmeos voltam à cidade natal no Mississippi para recomeçar a vida e descobrem que um mal ainda maior está à espera deles.'],
+      ['Interestelar','Interstellar',2014,8.7,'Ficção científica,Drama','2h 49min','Com a Terra morrendo, um ex-piloto lidera uma missão através de um buraco de minhoca em busca de um novo lar para a humanidade.'],
+      ['Invocação do Mal','The Conjuring',2013,7.5,'Terror,Suspense','1h 52min','Os investigadores paranormais Ed e Lorraine Warren ajudam uma família aterrorizada por uma presença sombria numa fazenda isolada.'],
+      ['Furiosa: Uma Saga Mad Max','Furiosa: A Mad Max Saga',2024,7.5,'Ação,Aventura','2h 28min','Sequestrada ainda criança, a jovem Furiosa sobrevive às gangues do deserto enquanto planeja voltar para casa.'],
+      ['Wonka','Wonka',2023,7.0,'Comédia,Fantasia','1h 56min','O jovem Willy Wonka chega à cidade com o sonho de abrir uma loja de chocolates, mas precisa enfrentar um cartel de doces.'],
+      ['Godzilla e Kong: O Novo Império','Godzilla x Kong: The New Empire',2024,6.0,'Ação,Ficção científica','1h 55min','Godzilla e Kong unem forças contra uma ameaça colossal escondida nas profundezas da Terra Oca.']
+    ],
+    tv:[
+      ['The Last of Us','The Last of Us',2023,8.6,'Drama,Ficção científica','2 temporadas','Vinte anos após uma pandemia devastar o mundo, um sobrevivente endurecido precisa atravessar os EUA escoltando uma garota que pode ser a cura.'],
+      ['A Casa do Dragão','House of the Dragon',2022,8.3,'Fantasia,Drama','2 temporadas','Duzentos anos antes de Game of Thrones, uma disputa pelo Trono de Ferro divide a família Targaryen e leva Westeros à guerra.'],
+      ['Game of Thrones','Game of Thrones',2011,9.2,'Fantasia,Drama','8 temporadas','Nobres famílias disputam o Trono de Ferro enquanto uma ameaça antiga desperta além da Muralha.'],
+      ['Succession','Succession',2018,8.9,'Drama','4 temporadas','Os filhos de um magnata da mídia disputam o controle do império da família quando o patriarca começa a pensar na sucessão.'],
+      ['The White Lotus','The White Lotus',2021,8.0,'Comédia,Drama','3 temporadas','Hóspedes ricos e funcionários de um resort de luxo têm uma semana de férias que termina em tragédia.'],
+      ['Pinguim','The Penguin',2024,8.6,'Crime,Drama','Minissérie','Depois da queda de Falcone, Oz Cobb aproveita o vácuo de poder para tentar dominar o submundo do crime em Gotham.'],
+      ['Chernobyl','Chernobyl',2019,9.3,'Drama','Minissérie','A história do maior desastre nuclear da história e das pessoas que se sacrificaram para conter suas consequências.'],
+      ['Euphoria','Euphoria',2019,8.3,'Drama','2 temporadas','Um grupo de adolescentes lida com drogas, sexo, identidade e redes sociais enquanto tenta descobrir quem é.'],
+      ['The Pitt','The Pitt',2025,8.8,'Drama','1 temporada','Um plantão de 15 horas no pronto-socorro de Pittsburgh, contado hora a hora pelos médicos que tentam salvar vidas no limite.'],
+      ['Hacks','Hacks',2021,8.2,'Comédia,Drama','4 temporadas','Uma lenda da comédia de Las Vegas e uma jovem roteirista sem papas na língua formam uma parceria tão conflituosa quanto brilhante.']
+    ]
+  },
+  apple:{
+    movie:[
+      ['Assassinos da Lua das Flores','Killers of the Flower Moon',2023,7.6,'Crime,Drama','3h 26min','Nos anos 1920, membros da nação Osage são assassinados um a um após a descoberta de petróleo em suas terras.'],
+      ['F1: O Filme','F1',2025,7.7,'Ação,Drama','2h 35min','Um piloto veterano volta à Fórmula 1 para ajudar uma equipe em crise e treinar um jovem talento cheio de si.'],
+      ['No Ritmo do Coração','CODA',2021,8.0,'Drama','1h 51min','Única pessoa que ouve numa família surda, uma adolescente divide-se entre ajudar no barco de pesca da família e seguir o sonho de cantar.'],
+      ['Napoleão','Napoleon',2023,6.4,'Drama,Guerra','2h 38min','A ascensão e a queda de Napoleão Bonaparte, contadas por meio de suas batalhas e da relação intensa com Josefina.'],
+      ['Lobos','Wolfs',2024,6.5,'Ação,Comédia','1h 48min','Dois "faxineiros" profissionais de crimes são contratados para o mesmo serviço e precisam trabalhar juntos numa noite que sai do controle.'],
+      ['Greyhound: Na Mira do Inimigo','Greyhound',2020,7.0,'Guerra,Ação','1h 31min','Na Segunda Guerra, um comandante em sua primeira missão protege um comboio aliado de submarinos alemães no Atlântico.'],
+      ['Como Vender a Lua','Fly Me to the Moon',2024,6.6,'Comédia,Romance','2h 12min','Uma especialista em marketing é contratada para melhorar a imagem da NASA e acaba encarregada de criar um pouso falso na Lua, por precaução.'],
+      ['Argylle: O Superespião','Argylle',2024,5.8,'Ação,Comédia','2h 19min','Uma escritora de livros de espionagem descobre que suas histórias estão se tornando reais — e que ela virou alvo.'],
+      ['Finch','Finch',2021,6.9,'Ficção científica,Drama','1h 55min','Num mundo devastado, um inventor doente constrói um robô para cuidar de seu cachorro quando ele não estiver mais lá.'],
+      ['Wolfwalkers','Wolfwalkers',2020,8.0,'Animação,Aventura','1h 43min','Na Irlanda do século XVII, uma jovem aprendiz de caçadora faz amizade com uma menina que se transforma em lobo.']
+    ],
+    tv:[
+      ['Ruptura','Severance',2022,8.7,'Ficção científica,Suspense','2 temporadas','Funcionários de uma empresa misteriosa passam por um procedimento que separa as memórias do trabalho das da vida pessoal.'],
+      ['Ted Lasso','Ted Lasso',2020,8.8,'Comédia,Drama','3 temporadas','Um técnico de futebol americano é contratado para treinar um time de futebol inglês — sem entender nada do esporte.'],
+      ['The Morning Show','The Morning Show',2019,8.2,'Drama','4 temporadas','Os bastidores de um telejornal matinal de sucesso, abalado por escândalos, disputas de ego e lutas por poder.'],
+      ['Slow Horses','Slow Horses',2022,8.2,'Suspense,Drama','5 temporadas','Agentes do MI5 rebaixados por erros de carreira são jogados num departamento esquecido — e acabam no centro de casos perigosos.'],
+      ['Silo','Silo',2023,8.1,'Ficção científica,Mistério','2 temporadas','Milhares de pessoas vivem num silo subterrâneo gigante, sem saber por que o mundo lá fora se tornou proibido.'],
+      ['Pachinko','Pachinko',2022,8.4,'Drama','2 temporadas','A saga de quatro gerações de uma família coreana imigrante, da Coreia ocupada ao Japão e aos EUA.'],
+      ['O Estúdio','The Studio',2025,8.1,'Comédia','1 temporada','O novo chefe de um estúdio de Hollywood tenta equilibrar a paixão pelo cinema com a pressão por lucro.'],
+      ['Fundação','Foundation',2021,7.6,'Ficção científica,Drama','3 temporadas','Um matemático prevê a queda do Império Galáctico e cria um plano para salvar o conhecimento humano.'],
+      ['Para Toda a Humanidade','For All Mankind',2019,8.1,'Ficção científica,Drama','4 temporadas','E se a União Soviética tivesse chegado à Lua primeiro? Uma história alternativa da corrida espacial.'],
+      ['Falando a Real','Shrinking',2023,8.1,'Comédia,Drama','2 temporadas','Um terapeuta em luto passa a dizer exatamente o que pensa aos pacientes — e mexe com a vida de todos, inclusive a dele.']
+    ]
+  },
+  paramount:{
+    movie:[
+      ['Top Gun: Maverick','Top Gun: Maverick',2022,8.2,'Ação,Drama','2h 10min','Após mais de 30 anos de serviço, Maverick volta à escola Top Gun para treinar uma nova geração de pilotos numa missão quase impossível.'],
+      ['O Poderoso Chefão','The Godfather',1972,9.2,'Crime,Drama','2h 55min','O patriarca de uma família da máfia transfere o controle de seu império ao filho relutante.'],
+      ['Um Lugar Silencioso','A Quiet Place',2018,7.5,'Terror,Ficção científica','1h 30min','Uma família sobrevive em silêncio absoluto num mundo dominado por criaturas que caçam pelo som.'],
+      ['Missão: Impossível – Acerto de Contas Parte 1','Mission: Impossible - Dead Reckoning Part One',2023,7.6,'Ação,Aventura','2h 43min','Ethan Hunt e sua equipe correm contra o tempo para encontrar uma arma capaz de ameaçar toda a humanidade.'],
+      ['Gladiador II','Gladiator II',2024,6.5,'Ação,Drama','2h 28min','Anos após a morte de Maximus, Lúcio é forçado a lutar no Coliseu e busca no passado a força para devolver a glória a Roma.'],
+      ['Sorria','Smile',2022,6.5,'Terror,Mistério','1h 55min','Depois de presenciar um incidente traumático, uma psiquiatra passa a ser perseguida por uma entidade com um sorriso aterrorizante.'],
+      ['Sonic 3: O Filme','Sonic the Hedgehog 3',2024,7.0,'Ação,Comédia','1h 50min','Sonic, Knuckles e Tails enfrentam Shadow, um novo e poderoso inimigo, e precisam formar uma aliança improvável.'],
+      ['Transformers: O Início','Transformers One',2024,7.6,'Animação,Ação','1h 44min','A origem de Optimus Prime e Megatron, quando ainda eram amigos inseparáveis em Cybertron.'],
+      ['Pânico VI','Scream VI',2023,6.4,'Terror,Mistério','2h 3min','Os sobreviventes dos ataques de Ghostface deixam Woodsboro e recomeçam em Nova York — mas o assassino vai atrás deles.'],
+      ['Bob Marley: One Love','Bob Marley: One Love',2024,6.3,'Drama','1h 47min','A trajetória de Bob Marley e a criação do álbum que levou o reggae e sua mensagem de paz para o mundo.']
+    ],
+    tv:[
+      ['Yellowstone','Yellowstone',2018,8.6,'Drama','5 temporadas','O patriarca de uma família de fazendeiros luta para proteger o maior rancho dos EUA de investidores, reservas indígenas e do governo.'],
+      ['1923','1923',2022,8.3,'Drama','2 temporadas','Uma nova geração da família Dutton enfrenta seca, guerra e a Grande Depressão em Montana.'],
+      ['Tulsa King','Tulsa King',2022,7.9,'Crime,Drama','3 temporadas','Depois de 25 anos na prisão, um mafioso de Nova York é mandado para Tulsa e decide montar seu próprio império.'],
+      ['Landman','Landman',2024,8.1,'Drama','2 temporadas','Nos campos de petróleo do oeste do Texas, um negociador de terras vive entre trabalhadores braçais e bilionários.'],
+      ['Yellowjackets','Yellowjackets',2021,7.8,'Terror,Mistério','3 temporadas','Um time feminino de futebol sobrevive a um acidente aéreo na selva — e, 25 anos depois, o que aconteceu lá volta para assombrá-las.'],
+      ['Operação Lioness','Special Ops: Lioness',2023,7.5,'Ação,Suspense','2 temporadas','A CIA infiltra uma fuzileira naval no círculo de uma família ligada ao terrorismo, numa missão de altíssimo risco.'],
+      ['Dexter: Pecado Original','Dexter: Original Sin',2024,8.0,'Crime,Suspense','1 temporada','Em Miami, 1991, o jovem Dexter Morgan dá os primeiros passos como serial killer enquanto começa a trabalhar na polícia.'],
+      ['Mayor of Kingstown','Mayor of Kingstown',2021,8.2,'Crime,Drama','4 temporadas','Numa cidade onde a prisão é o maior negócio, uma família tenta manter a ordem entre criminosos, policiais e políticos.'],
+      ['Star Trek: Strange New Worlds','Star Trek: Strange New Worlds',2022,8.2,'Ficção científica,Aventura','3 temporadas','O capitão Pike e a tripulação da Enterprise exploram novos mundos, anos antes da era do capitão Kirk.'],
+      ['Halo','Halo',2022,7.1,'Ação,Ficção científica','2 temporadas','No século XXVI, o supersoldado Master Chief lidera a guerra da humanidade contra uma aliança alienígena.']
+    ]
+  }
+};
+
+
+// Imagens oficiais em alta resolução (TMDB) para o modo demonstração: [pôster, fundo horizontal]
+const IMG = {
+  'red-notice-movie':['pe17f8VDfzbvbHSAKAlcORtBHmW.jpg','p34WRcgkN2QIHcds5FtFiSpV3PC.jpg'],
+  'don-t-look-up-movie':['6Sc7Tjt7aPsdghYK32mDMFeZkqJ.jpg','nvxrQQspxmSblCYDtvDAbVFX8Jt.jpg'],
+  'bird-box-movie':['kTHDVXVTT62gJY9WfZnaXdmtvZE.jpg','pDKFL1zcHzEpmz4MJA5JJnRbJeD.jpg'],
+  'the-irishman-movie':['9H1XgBZFoVnh7nSibGWZcJMOL6C.jpg','1RDto0tLo8Fhq7OcwgDaM7nECb7.jpg'],
+  'glass-onion-movie':['zQJcENHbZUpLQ8RKYt9wTzcXCwv.jpg','y3uOfZAYwLkbvhunswBCskNMrfI.jpg'],
+  'extraction-movie':['zxahunlqvMPWzUBd1XSRsGawdS9.jpg','2QSZ4CPd8AoljAL76qM30dFft07.jpg'],
+  'all-quiet-on-the-western-front-movie':['qmcKs0Aoft7MBdBoj1haZyPRgM2.jpg','xBwtP27cx8WfjHJVFkpuV6F1RES.jpg'],
+  'enola-holmes-movie':['riYInlsq2kf1AWoGm80JQW5dLKp.jpg','kMe4TKMDNXTKptQPAdOF0oZHq3V.jpg'],
+  'the-platform-movie':['kY0ET33EoiJhjaPCzzvywCDqP6b.jpg','3tkDMNfM2YuIAJlvGO6rfIzAnfG.jpg'],
+  'roma-movie':['veWGVw33lnifG10fpkz3QmimVaI.jpg','zl9uqCl5iUSb50sTk2BPzw6bJnU.jpg'],
+  'stranger-things-tv':['twfKp60THrcOIep9sjHODOOfO8d.jpg','9P4IIMYY3HifqeruZq0ZZ9g7YUi.jpg'],
+  'squid-game-tv':['6gcHdboppvplmBWxvROc96NJnmm.jpg','2meX1nMdScFOoV4370rqHWKmXhY.jpg'],
+  'the-crown-tv':['ehUMAA3qDR5HNor9DB60g72KNQZ.jpg','8VXhcrl5z2I1zEU9X3pkkNrZlD.jpg'],
+  'baby-reindeer-tv':['5Qsao5QaFFu3BlFgUhB5asp4dzb.jpg','2qLYxCyxf4fim0X5OqM5FjZqWXu.jpg'],
+  'the-queen-s-gambit-tv':['ubWpLTkwcms5PfZJMFZkNXVYXqJ.jpg','ktZaQ4FEmKpRgetiBooZETYQbmQ.jpg'],
+  'saltburn-movie':['zGTfMwG112BC66mpaveVxoWPOaB.jpg','bAtFhmRHp0f6aHqj1UGTZoPcmQo.jpg'],
+  'the-tomorrow-war-movie':['lWQ3hI78Az2RHfzDpEuvougqUz7.jpg','yizL4cEKsVvl17Wc1mGEIrQtM2F.jpg'],
+  'air-movie':['8OGQCOp6BxwvekhZBQCzVd77Y6l.jpg','aT3sRVqgpkyCo23fp9myVfKPWbA.jpg'],
+  'manchester-by-the-sea-movie':['cy7fOIXX0MO2HXnTE3Lf0NwjQfN.jpg','fjk4eE8Ypke4YLv5A3ArDH4GzYH.jpg'],
+  'sound-of-metal-movie':['gjKlQJlWtP61ZN4WKbcSVHzjqq8.jpg','7b5R8FfGUzlxfhOkPpL3xyIeuyF.jpg'],
+  'road-house-movie':['h2xDLj6CtzItwQEFyBjIXh5z3QD.jpg','clFFCapyGpE7KD4Jsu5pUbFBZF4.jpg'],
+  'one-night-in-miami-movie':['izMwtiJk4JaMTnW7UyJIpY1rAvd.jpg','yUyuDacqA0IhWqEbPQPXBsEIbPX.jpg'],
+  'without-remorse-movie':['uHEZ4ZMziIjlAgCTQAEh9ROvtj0.jpg','fPGeS6jgdLovQAKunNHX8l0avCy.jpg'],
+  'borat-subsequent-moviefilm-movie':['h4ciG34AaQLfk38ltBGMDdxLeF5.jpg','hbrXbVoE0NuA1ORoSGGYNASagrl.jpg'],
+  'red-one-movie':['zX2UeAmF8XDBJM3sZ0RS0jLQ8Gg.jpg','rOmUuQEZfPXglwFs5ELLLUDKodL.jpg'],
+  'the-boys-tv':['in1R2dDc421JxsoRWaIIAqVI2KE.jpg','bq28ajZaoMyzEIm6REelqyqtEDZ.jpg'],
+  'fallout-tv':['tQRX6GbYooU7kUaarKf5YXDTONy.jpg','coaPCIqQBPUZsOnJcWZxhaORcDT.jpg'],
+  'reacher-tv':['f1VCQIG2iCyOookdgOzwtUpwWC0.jpg','pF0qkRsrHkdYadPWY9AMeFZfcwk.jpg'],
+  'invincible-tv':['qhb7RWU9ad9a5m3HbeRRXzjaMXf.jpg','9qrroces8C6R9aKr08hACNPVXdZ.jpg'],
+  'the-rings-of-power-tv':['8FPCnfOftiLTHg5wnJxVdtlF8EN.jpg','achmETPRJZc9QVXsMPgHwYEyNar.jpg'],
+  'jack-ryan-tv':['sUQS9Uks2UNdFc1Io2U0ulTDGsr.jpg','2y2TbzeKZHYqTN5gb4nBv9dKk1f.jpg'],
+  'mr-mrs-smith-tv':['83Oqz9KJaK0l58OW3S0Y4Rqi9BE.jpg','5mC90b2FrJMe3Xr26cL0HeWcrvG.jpg'],
+  'inside-out-2-movie':['lHKNS35r4RTa9GO72vdadMLxoiV.jpg','p5ozvmdgsmbWe0H8Xk7Rc8SCwAB.jpg'],
+  'deadpool-wolverine-movie':['cJFqqiDYprqExaXatu4AaoMzDG2.jpg','by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg'],
+  'avatar-the-way-of-water-movie':['hm6nONQOgVpKmRK5YUX9EqfJ0NH.jpg','kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg'],
+  'poor-things-movie':['iOdcXYSVzBgmBJzNIlIMOZ6fz0F.jpg','zh6IdheEYinU4TPtorWsjx6qPQE.jpg'],
+  'coco-movie':['6oNm06TPz2vGiPc2I52oXW3JwPS.jpg','g7CHF8gTLGooTbP4GznIGwaqAGL.jpg'],
+  'soul-movie':['1G7QNn1sUShae0Rf9k9D99wVFg5.jpg','rQaHA74pevnGsxcKGaoZVGWe9TC.jpg'],
+  'avengers-endgame-movie':['9fRX8UKlIW7Lb9GqNsJVakWWFCi.jpg','7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg'],
+  'free-guy-movie':['bAnms4gJ5YkZzZCDkHsRKxEg2Xj.jpg','rOJb0yQOCny0bPjg8bCLw8DyAD7.jpg'],
+  'encanto-movie':['nUG2CEEYbuvaARFUdyWXAIvM8RR.jpg','3G1Q5xF40HkUBJXxt2DQgQzKTp5.jpg'],
+  'luca-movie':['25Sju0ajhfZfIGHMLx83W2y3Arf.jpg','620hnMVLu6RSZW6a5rwO8gqpt0t.jpg'],
+  'the-bear-tv':['tAJYUFaWot3jn5vtDUoxNNIw9aF.jpg','aJtG4txtmiRHwAAqENQHZvBs6kY.jpg'],
+  'shogun-tv':['gaOb9hyCDUcbZiTYcHy7mIFmNo.jpg','bwSmgmd90hCWwqOKQYTEraeOZhJ.jpg'],
+  'the-mandalorian-tv':['sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg','9zcbqSxdsRMZWHYtyCd1nXPr2xq.jpg'],
+  'loki-tv':['2TwPJfPiBI2lVrofggw3H0b4cDC.jpg','q3jHCb4dMfYF6ojikKuHd6LscxC.jpg'],
+  'only-murders-in-the-building-tv':['8uYitjfCqJLdehIj0Q6RcMfyI8V.jpg','WCnEPf4ZNPjszndmrFlDxZ5Uvd.jpg'],
+  'abbott-elementary-tv':['zk2aNVIHoapdWKOcaYp7PhX9SxD.jpg','s3owzvmihtDrunVxB2DyGjn9iJt.jpg'],
+  'american-horror-story-tv':['yCkPLQ10qKIUgRBXmQVVMF1h96d.jpg','5G4Bnc4Q0YUK1bwLEUYmIsmm2Ib.jpg'],
+  'wednesday-tv':['7rxiQrZjrer0RB9qNA8rHYFo53R.jpg','iHSwvRVsRyxpX7FE7GbviaDvgGZ.jpg'],
+  'dark-tv':['gw8ZlIXEg6SIx3FgMEQqmBkPYKV.jpg','3jDXL4Xvj3AzDOF6UH1xeyHW8MH.jpg'],
+  'money-heist-tv':['k8ytNZ32uf4JtrtpfIw54MD0oZX.jpg','xGexTKCJDkl12dTW4YCBDXWb1AD.jpg'],
+  'ozark-tv':['epUO5w9nRmozR0iWCFwChT3ha6j.jpg','aatG9iVAUL7U7OyFEmupESpOrD2.jpg'],
+  'black-mirror-tv':['aCTL24B8ZuiI2osMwoUI5rqBXoF.jpg','dg3OindVAGZBjlT3xYKqIAdukPL.jpg'],
+  'fleabag-tv':['vFn0nLPcIggPH5LTWWaJ2hcsGlc.jpg','hXdQ4MWsEOX6qg6VydKrLb3YJ4g.jpg'],
+  'good-omens-tv':['43nc7lgrrQIbZQl2NbtWwziQfUd.jpg','dQCKc5NKeKOGAQusk2FdctGB9k5.jpg'],
+  'the-marvelous-mrs-maisel-tv':['i61vpsczXOfrDbkdyVHo6nSmVfQ.jpg','vQ77kC1amsZECKIxkUIsMJCtBVp.jpg'],
+  'andor-tv':['yX8c3bXKzAquEKQ75eQslnodskK.jpg','quCeAmVQHfsdcYkicbxZWVauCVb.jpg'],
+  'wandavision-tv':['8mAyDNSCZDiejPTm4lwgbztut7y.jpg','lOr9NKxh4vMweufMOUDJjJhCRHW.jpg'],
+  'percy-jackson-and-the-olympians-tv':['4sLiVmCiRiX9abW4niJyNZx15bK.jpg','sAxx25ijwYQ8xsT56wu2IzvIRss.jpg'],
+  'dune-part-two-movie':['VMy4UGsI2u3f4fALGeCqCdsQBb.jpg','eZ239CUp1d6OryZEBPnO2n87gMG.jpg'],
+  'joker-movie':['xLxgVxFWvb9hhUyCDDXxRPPnFck.jpg','rlay2M5QYvi6igbGcFjq8jxeusY.jpg'],
+  'the-batman-movie':['wd7b4Nv9QBHDTIjc2m7sr0IUMoh.jpg','rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg'],
+  'barbie-movie':['pP12F7Gutn6CpHYaIPBlDRHlMlk.jpg','1esAE8sLJRWWFsLLeh5r3g2WanI.jpg'],
+  'sinners-movie':['v0Ljeti537c6cNKweuEN0iaU3x4.jpg','nAxGnGHOsfzufThz20zgmRwKur3.jpg'],
+  'interstellar-movie':['tR1XVa5bxgdh2bRw2u0DzrgkO2l.jpg','8sNiAPPYU14PUepFNeSNGUTiHW.jpg'],
+  'the-conjuring-movie':['1NxHKZW5DPbUFtbF3MxbdSyxRqU.jpg','ecKQlAEG95k62SMGhvX83oEqANK.jpg'],
+  'furiosa-a-mad-max-saga-movie':['7qOSKoOAPgemYhBwbJgBWcCxPWZ.jpg','raph7qjAGTMXaIjVxt6ZDSXRzUr.jpg'],
+  'wonka-movie':['uQWEomz2wLoijrvoFaJt2gUMXRu.jpg','uIk2g2bRkNwNywKZIhC5oIU94Kh.jpg'],
+  'godzilla-x-kong-the-new-empire-movie':['fWSGD2yrzz6hscocnMD8AEXIThk.jpg','gvLG3Fnznkxl4SmYfcK8gUuqxM8.jpg'],
+  'the-last-of-us-tv':['qWo5TP7mBijoZrfxBJkUMctkBt0.jpg','lY2DhbA7Hy44fAKddr06UrXWWaQ.jpg'],
+  'house-of-the-dragon-tv':['oKJDm4QCKbp6mR4FnxXrFlPJP8Y.jpg','577eXC8wFQT0eUrJcgznSiFPRmk.jpg'],
+  'game-of-thrones-tv':['aqomTRKjNZkmNEeOZnEmWrFTmKU.jpg','zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg'],
+  'succession-tv':['z0XiwdrCQ9yVIr4O0pxzaAYRxdW.jpg','d87JXX3DLkRJMfm5StCmmnmhHuX.jpg'],
+  'the-white-lotus-tv':['sQ35C3pjM8xCBT87xI90DuzizZD.jpg','qVBIAcZkK5j6WRq7JehJcOMbdgb.jpg'],
+  'the-penguin-tv':['pPUNmQZUh7h6w2423VvtzUeg1LD.jpg','4TdmuuwiIiKw3JOjIuhdgYxRXnN.jpg'],
+  'chernobyl-tv':['hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg','900tHlUYUkp7Ol04XFSoAaEIXcT.jpg'],
+  'euphoria-tv':['cQMOyNLS1RsQIMlmVR6MEk2fvii.jpg','mez2Z3WqlPKNXpi7mWoiiE5guE9.jpg'],
+  'the-pitt-tv':['kvFSpESyBZMjaeOJDx7RS3P1jey.jpg','z3BkMbCy5ajZPMyKEUwsPHuz2cV.jpg'],
+  'hacks-tv':['73vn8TdBZDp5o4AztOGhQRYeGIR.jpg','bbAR4qKxjnjyKAt4YMrL725Mtfw.jpg'],
+  'killers-of-the-flower-moon-movie':['kBLMPD5BCmcrHKIhjZ86uWHZG5K.jpg','jwjCWMPWSQ7h3sqG4mqI7pMEZu0.jpg'],
+  'f1-movie':['fMcY5hpVZQ0cLKHvFM1mo6GrAr0.jpg','lkDYN0whyE82mcM20rwtwjbniKF.jpg'],
+  'coda-movie':['fXeWSHLlAEsINva6SJgb5hCLBzy.jpg','v85FlkbMYKa5du1glm0YfYNsL2n.jpg'],
+  'napoleon-movie':['2UY2xfkgw9EgOOyA7ro3eyGJ9V9.jpg','33pMXav77ICRnceEBLhL8lXTywv.jpg'],
+  'wolfs-movie':['5LvefZZsapIsOIckLZHbYlwCAkm.jpg','nSVwus6Vcnw06zqKAa1ioacrpUF.jpg'],
+  'greyhound-movie':['5l1DwjqjZVJzv4ecE2yPnXIIU3C.jpg','xXBnM6uSTk6qqCf0SRZKXcga9Ba.jpg'],
+  'fly-me-to-the-moon-movie':['vGLp898JntN7s5KABbiJ7PCS3ZL.jpg','4ItXEyVPj6wb9AdhsltcqYE6f5f.jpg'],
+  'argylle-movie':['1ojCiMpYmCciIFuEcgLOOGLbUND.jpg','mY3CRicUMaX3Btxv8yspud75UJu.jpg'],
+  'finch-movie':['eEJtzD1F05xDipFEDY98CTH5yZn.jpg','uoc358GH6Yl7TufbUKHkETPu64B.jpg'],
+  'wolfwalkers-movie':['gCa0yDjBb6zHgy2dhbud9mfsTLK.jpg','3zTbERSBLh7waK9811RTKGAcG86.jpg'],
+  'severance-tv':['3DjOAUBR8Hra4R9kK9U8jDaoqyC.jpg','ixgFmf1X59PUZam2qbAfskx2gQr.jpg'],
+  'ted-lasso-tv':['uRHsiw1wLxPHFXkkv4Ix1s0O6f4.jpg','4bG49jVR7NrCNQjahDUsDqvIwle.jpg'],
+  'the-morning-show-tv':['y9x2R87yt2U616736NJrP0d56dt.jpg','uMsTtNaUEWOE2q64m8zthBIMgen.jpg'],
+  'slow-horses-tv':['rdNvIaPXpkUZl5tQLsTP15osfu2.jpg','gPQppUnLx9vqPDLz3WwZ2HJsNbt.jpg'],
+  'silo-tv':['tVR4q9FazxJuCEpaYxiCijUlvM3.jpg','4XccmjsOmQZw8S2iW1wvlvmb5v1.jpg'],
+  'pachinko-tv':['wUTXdmL6oNjhiStGveOaPeuFOYQ.jpg','vVKlL4HyrQYAcJuaaUW49FrRqY5.jpg'],
+  'the-studio-tv':['7Qlpnaj2aBSfLZ1e99ee7J8JogV.jpg','qqqo3P0txcP5ES3ZQ7YR4SmUwam.jpg'],
+  'foundation-tv':['6qRIQqWwnxVemvvDfFuK3kkIqpS.jpg','7NNNXo0qG2SqH4JoG7GPvJ2hzes.jpg'],
+  'for-all-mankind-tv':['JP3DItWMbrrLiKR5AYUfpsNf2b.jpg','9OQ5BIITkJwRJo9JA6AlCfJIGBQ.jpg'],
+  'shrinking-tv':['oaYi4n3pgBLeQ6FH3SU8G3XcSqq.jpg','hI9z1UuNhBthvkm3iJ8m3zv43Pf.jpg'],
+  'top-gun-maverick-movie':['kPbuLGVSJHATkW9fX9L3h1wM0Pa.jpg','AaV1YIdWKnjAIAOe8UUKBFm327v.jpg'],
+  'the-godfather-movie':['wOMxE93W6KcZTuCeNUByNTSaLLt.jpg','ejdD20cdHNFAYAN2DlqPToXKyzx.jpg'],
+  'a-quiet-place-movie':['jk1LYcbiuUr0tv37cVcmp4u9KcN.jpg','nHRUtBwFNnNN70vcQ7lAsjc2T6S.jpg'],
+  'mission-impossible-dead-reckoning-part-one-movie':['hBKxN5Z8gRo2am0whMeQlPv19K4.jpg','628Dep6AxEtDxjZoGP78TsOxYbK.jpg'],
+  'gladiator-ii-movie':['342bly9MqveL65TnEFzx8TTUxcL.jpg','tOqIwliWMovSIZ9DyvHcHI7p2im.jpg'],
+  'smile-movie':['3LfJ1kQZv6OX687rJMOAMzFJlc9.jpg','kMZIMqEXO5MFd5Y1Ha2jZZF4pvF.jpg'],
+  'sonic-the-hedgehog-3-movie':['tfM1T6tAivjvy0sLwt6Y9WvlmzB.jpg','zOpe0eHsq0A2NvNyBbtT6sj53qV.jpg'],
+  'transformers-one-movie':['9yPuNAZQd5m5iKpQV2MDAfcwW9N.jpg','cMfokHWle5lfCreoV08cbmkKv6G.jpg'],
+  'scream-vi-movie':['aKmjs235LlPInyqhITgCHbSTacf.jpg','k6ANeyxAfMRi5xhxIXv1Scn9vc2.jpg'],
+  'bob-marley-one-love-movie':['7RXyg2jBgItk0wG5eNbYHb23qXt.jpg','lHPap2xBR7DgWLiu6RsfKESgzAi.jpg'],
+  'yellowstone-tv':['rrOYi7Zj2OmBojo1VuuZM129gic.jpg','ynSOcgDLZfdLCZfRSYZGiTgYJVo.jpg'],
+  '1923-tv':['t2BpkYRH8GRX9sSDirXQGPz58aG.jpg','vIioWssbxRtEkIzgj8r0pCWYkYM.jpg'],
+  'tulsa-king-tv':['rOYLWCdAifpUtPlTf1WHxyaxeMt.jpg','mNHRGO1gFpR2CYZdANe72kcKq7G.jpg'],
+  'landman-tv':['hYthRgS1nvQkGILn9YmqsF8kSk6.jpg','mh2UczqEXJJVgqohbyZbHTuxwhL.jpg'],
+  'yellowjackets-tv':['xRnGrn7Z7SC0KIBodocoU1QgDZF.jpg','ibFWJDWS8cTO6s2vZVd2uKDm8p.jpg'],
+  'special-ops-lioness-tv':['5OeI0zcsoux6VNNQzGjvDO11gHA.jpg','mU7l9UaEItxHbg2YBNs0sHjoFVY.jpg'],
+  'dexter-original-sin-tv':['w1iM0vkMz9XVCH1ZBiU3m1288G5.jpg','7f2bZ9TdBOlnKpdiir8xWDv6yOi.jpg'],
+  'mayor-of-kingstown-tv':['aoZm9TTbxHfexecDoEiiYWvft3p.jpg','39bifj2FNytJ2m1cqOBcWMTKgmV.jpg'],
+  'star-trek-strange-new-worlds-tv':['bxuUbcM9GqvmQY1EDm5sMtLdcTv.jpg','fZJs6xgU9dqIg9phIXjZAZOInzy.jpg'],
+  'halo-tv':['4UmNhZCEu8Vt3byMvNxNEPyf8EY.jpg','zW0v2YT74C6tRafzqqBkfSqLAN0.jpg']
+};
+
+/* ================= Configuração =================
+   Cole aqui as chaves para valerem para todos os usuários (cada usuário também pode informar no Perfil).
+   TMDB (grátis, obrigatória p/ dados reais): themoviedb.org → Configurações → API
+   OMDb (grátis, opcional p/ nota IMDb):     omdbapi.com/apikey.aspx
+   Sem chave TMDB o app roda em modo demonstração com os dados de exemplo acima. */
+const CONFIG = { TMDB_KEY: '', OMDB_KEY: '' };
+
+// provedores TMDB (região BR) → plataforma do app
+const PROVIDER_MAP = { 8:'netflix', 1796:'netflix', 119:'prime', 9:'prime', 337:'disney', 1899:'hbo', 384:'hbo', 350:'apple', 2:'apple', 531:'paramount' };
+const GENRE_NAMES = { 28:'Ação',12:'Aventura',16:'Animação',35:'Comédia',80:'Crime',99:'Documentário',18:'Drama',10751:'Família',14:'Fantasia',36:'História',27:'Terror',10402:'Música',9648:'Mistério',10749:'Romance',878:'Ficção científica',10770:'Filme de TV',53:'Suspense',10752:'Guerra',37:'Faroeste',10759:'Ação e Aventura',10762:'Infantil',10763:'Notícias',10764:'Reality',10765:'Ficção e Fantasia',10766:'Novela',10767:'Talk show',10768:'Guerra e Política' };
+// gênero do perfil → ids TMDB (séries não têm "Terror"/"Suspense" no TMDB, usamos o mais próximo)
+const GENRE_IDS = {
+  'Ação':{movie:[28],tv:[10759]}, 'Aventura':{movie:[12],tv:[10759]}, 'Animação':{movie:[16],tv:[16]},
+  'Comédia':{movie:[35],tv:[35]}, 'Crime':{movie:[80],tv:[80]}, 'Documentário':{movie:[99],tv:[99]},
+  'Drama':{movie:[18],tv:[18]}, 'Família':{movie:[10751],tv:[10751]}, 'Fantasia':{movie:[14],tv:[10765]},
+  'Ficção científica':{movie:[878],tv:[10765]}, 'Guerra':{movie:[10752],tv:[10768]}, 'Mistério':{movie:[9648],tv:[9648]},
+  'Romance':{movie:[10749],tv:[18]}, 'Suspense':{movie:[53],tv:[9648,80]}, 'Terror':{movie:[27],tv:[9648]}
+};
+
+/* ================= Utilidades ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const slug = s => norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h,16777619); } return h >>> 0; };
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('oqvh_'+k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('oqvh_'+k, JSON.stringify(v)); } catch {} }
+};
+const fmtRuntime = m => m >= 60 ? `${Math.floor(m/60)}h${m % 60 ? ' ' + m % 60 + 'min' : ''}` : `${m}min`;
+
+const NOW = new Date();
+const DAY = NOW.getFullYear()*10000 + (NOW.getMonth()+1)*100 + NOW.getDate();
+const dateShort = NOW.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
+const dateLong = NOW.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+
+const D = [];
+for (const p in RAW) for (const type in RAW[p]) RAW[p][type].forEach(([t,o,y,imdb,g,dur,s]) =>
+  {
+    const id = slug(o)+'-'+type, im = IMG[id];
+    D.push({ id, t, o, y, iscore: imdb, g: g.split(','), dur, s, p, type, img: im ? { p: '/' + im[0], b: '/' + im[1] } : null });
+  });
+const items = new Map(D.map(x => [x.id, x]));
+
+const state = {
+  type: store.get('type','movie'),
+  saved: store.get('saved',[]),
+  savedItems: store.get('savedItems',{}),
+  profile: Object.assign({name:'',email:'',birth:'',platforms:[],genres:[],tmdb:'',omdb:''}, store.get('profile',{})),
+  imdbCache: store.get('imdb',{}),
+  live: false,
+  data: { movie:null, tv:null },
+  shuffle: 0,
+  heroId: null,
+  detailId: null,
+  layers: []
+};
+const getItem = id => items.get(id) || state.savedItems[id];
+const tmdbKey = () => (state.profile.tmdb || CONFIG.TMDB_KEY).trim();
+const omdbKey = () => (state.profile.omdb || CONFIG.OMDB_KEY).trim();
+const rating = x => x.iscore ? [x.iscore, 'IMDb'] : [x.tscore || 0, 'TMDB'];
+const val = x => rating(x)[0];
+const matchGenre = (x, g) => x.gids ? (GENRE_IDS[g]?.[x.type] || []).some(id => x.gids.includes(id)) : x.g.includes(g);
+const isTitle = r => r.media_type === 'movie' || r.media_type === 'tv';
+
+/* ================= Ícones ================= */
+const I = {
+  bookmark:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>',
+  shuffle:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
+  search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  down:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  play:'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>',
+  home:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  spark:'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z" fill="currentColor"/></svg>',
+  out:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>'
+};
+const bookmarkSm = I.bookmark.replace(/width="22" height="22"/,'width="18" height="18"');
+
+/* ================= Imagens ================= */
+function imgTag(x, kind){
+  const im = x.img;
+  if (!im) return '';
+  // destaque: pôster vertical no celular, fundo horizontal no desktop
+  const hero = kind === 'hero', wide = hero && innerWidth > 800;
+  const path = wide ? (im.b || im.p) : (im.p || im.b);
+  if (!path) return '';
+  const px = innerWidth * (devicePixelRatio || 1);
+  const size = !hero ? 'w342' : wide ? (px > 1600 ? 'original' : 'w1280') : (px > 800 ? 'original' : 'w780');
+  return `<img src="https://image.tmdb.org/t/p/${size}${path}" alt="" ${hero ? 'fetchpriority="high"' : 'loading="lazy"'} onerror="this.parentNode.classList.remove('has-img');this.remove()">`;
+}
+function art(x, kind, cls, inner = ''){
+  const h1 = hash(x.o || x.t) % 360, h2 = (h1 + 40 + hash(x.t) % 90) % 360;
+  const img = imgTag(x, kind);
+  return `<div class="${cls} art${img ? ' has-img' : ''}" style="--h1:${h1};--h2:${h2}" data-art="${x.id}">${img}${inner}</div>`;
+}
+const poster = x => art(x, 'poster', 'poster', `<span class="score">${val(x) ? val(x).toFixed(1) : '—'}</span><div class="poster-t">${esc(x.t)}</div>`);
+
+/* ================= API (TMDB + OMDb) ================= */
+// cache do dia: limpa entradas de dias anteriores
+try { Object.keys(localStorage).filter(k => k.startsWith('oqvh_c:') && !k.startsWith('oqvh_c:' + DAY)).forEach(k => localStorage.removeItem(k)); } catch {}
+const mem = new Map();
+async function tmdb(path, params = {}){
+  const key = tmdbKey(), bearer = key.length > 40; // token de leitura (v4) ou api_key (v3)
+  const qs = new URLSearchParams({ language: 'pt-BR', ...params });
+  const ck = path + '?' + qs;
+  if (mem.has(ck)) return mem.get(ck);
+  const cached = store.get('c:' + DAY + ':' + ck, null);
+  if (cached) { mem.set(ck, cached); return cached; }
+  if (!bearer) qs.set('api_key', key);
+  const r = await fetch('https://api.themoviedb.org/3' + path + '?' + qs, bearer ? { headers: { Authorization: 'Bearer ' + key } } : {});
+  if (r.status === 401) throw new Error('auth');
+  if (!r.ok) throw new Error('http ' + r.status);
+  const j = await r.json();
+  mem.set(ck, j); store.set('c:' + DAY + ':' + ck, j);
+  return j;
+}
+
+function fromTmdb(r, type, p){
+  type = isTitle(r) ? r.media_type : type;
+  const id = (type === 'movie' ? 'm' : 't') + r.id;
+  const x = items.get(id) || state.savedItems[id] || { id, tid: r.id, type, live: true };
+  const gids = r.genre_ids || (r.genres || []).map(g => g.id);
+  Object.assign(x, {
+    t: r.title || r.name || x.t,
+    o: r.original_title || r.original_name || x.o,
+    y: (r.release_date || r.first_air_date || '').slice(0, 4) || x.y || '',
+    tscore: r.vote_average ?? x.tscore,
+    gids,
+    g: gids.map(i => GENRE_NAMES[i]).filter(Boolean).slice(0, 3),
+    s: r.overview || x.s || 'Sinopse ainda não disponível em português.',
+    img: { p: r.poster_path || x.img?.p, b: r.backdrop_path || x.img?.b }
+  });
+  if (p) x.p = p;
+  if (x.imdbId && state.imdbCache[x.imdbId]) x.iscore = state.imdbCache[x.imdbId];
+  items.set(id, x);
+  return x;
+}
+
+async function imdbRating(x){
+  if (!x.imdbId || x.iscore) return;
+  if (state.imdbCache[x.imdbId]) { x.iscore = state.imdbCache[x.imdbId]; return; }
+  const key = omdbKey();
+  if (!key) return;
+  try {
+    const o = await (await fetch(`https://www.omdbapi.com/?i=${x.imdbId}&apikey=${encodeURIComponent(key)}`)).json();
+    const v = parseFloat(o.imdbRating);
+    if (v) { x.iscore = v; state.imdbCache[x.imdbId] = v; store.set('imdb', state.imdbCache); }
+  } catch {}
+}
+
+// detalhes: duração/temporadas, onde assistir no Brasil, id IMDb e recomendações
+async function ensureDetails(x){
+  if (!x.live || x.full) return x;
+  const d = await tmdb(`/${x.type}/${x.tid}`, { append_to_response: 'watch/providers,external_ids,recommendations' });
+  fromTmdb(d, x.type);
+  x.dur = x.type === 'movie'
+    ? (d.runtime ? fmtRuntime(d.runtime) : '')
+    : (d.number_of_seasons ? `${d.number_of_seasons} temporada${d.number_of_seasons > 1 ? 's' : ''}` : '');
+  const br = d['watch/providers']?.results?.BR;
+  const flat = br?.flatrate || [];
+  const mine = [...new Set(flat.map(v => PROVIDER_MAP[v.provider_id]).filter(Boolean))];
+  if (!mine.length) x.p = null;
+  else if (!mine.includes(x.p)) x.p = mine.find(k => state.profile.platforms.includes(k)) || mine[0];
+  x.others = flat.filter(v => !PROVIDER_MAP[v.provider_id]).map(v => v.provider_name).slice(0, 3);
+  x.watchLink = br?.link || '';
+  x.recs = (d.recommendations?.results || []).slice(0, 10).map(r => fromTmdb(r, x.type).id);
+  x.imdbId = d.external_ids?.imdb_id || d.imdb_id || '';
+  x.full = true;
+  await imdbRating(x);
+  return x;
+}
+
+const userProviders = () => (state.profile.platforms.length ? state.profile.platforms : Object.keys(PLATFORMS)).map(k => PLATFORMS[k].ids).join('|');
+const streamBR = { watch_region: 'BR', with_watch_monetization_types: 'flatrate' };
+
+async function loadLive(type){
+  if (state.data[type]) return state.data[type];
+  // Top 10: os mais populares hoje em cada plataforma (Brasil)
+  const tops = {};
+  await Promise.all(Object.entries(PLATFORMS).map(async ([k, P]) => {
+    const j = await tmdb(`/discover/${type}`, { ...streamBR, with_watch_providers: P.ids, sort_by: 'popularity.desc' });
+    tops[k] = j.results.slice(0, 10).map(r => fromTmdb(r, type, k));
+  }));
+  // candidatos à recomendação: bem avaliados, nas plataformas e gêneros do usuário
+  const gids = [...new Set(state.profile.genres.flatMap(g => GENRE_IDS[g]?.[type] || []))];
+  const params = { ...streamBR, with_watch_providers: userProviders(), sort_by: 'popularity.desc',
+    'vote_average.gte': '6.8', 'vote_count.gte': type === 'movie' ? '800' : '300' };
+  if (gids.length) params.with_genres = gids.join('|');
+  const pages = await Promise.all([1, 2].map(page => tmdb(`/discover/${type}`, { ...params, page })));
+  const pool = pages.flatMap(j => j.results).map(r => fromTmdb(r, type));
+  return state.data[type] = { tops, pool: pool.length ? pool : Object.values(tops).flat() };
+}
+
+/* ================= Dados de exemplo ================= */
+// Ranking diário: base na nota + variação do dia
+const topList = (p, type) => D.filter(x => x.p === p && x.type === type)
+  .map(x => ({ x, k: val(x) + rng(DAY + hash(x.id))() * 1.8 }))
+  .sort((a, b) => b.k - a.k).map(o => o.x);
+function demoData(type){
+  const tops = {};
+  for (const k in PLATFORMS) tops[k] = topList(k, type);
+  let pool = D.filter(x => x.type === type);
+  const pf = state.profile.platforms;
+  if (pf.length) { const f = pool.filter(x => pf.includes(x.p)); if (f.length) pool = f; }
+  return { tops, pool };
+}
+async function getData(type){
+  if (!state.live) return demoData(type);
+  try { return await loadLive(type); }
+  catch (err) {
+    state.live = false;
+    renderDrawer();
+    toast(err.message === 'auth' ? 'Chave TMDB inválida · mostrando exemplos' : 'Sem conexão com o TMDB · mostrando exemplos');
+    return demoData(type);
+  }
+}
+
+/* ================= Recomendação do dia ================= */
+function pick(pool){
+  const fav = state.profile.genres;
+  const ranked = pool.map(x => {
+    const m = fav.filter(g => matchGenre(x, g));
+    return { x, m, k: val(x) + m.length * 1.3 + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
+  }).sort((a, b) => b.k - a.k).slice(0, 6);
+  return ranked[state.shuffle % ranked.length];
+}
+
+const isSaved = id => state.saved.includes(id);
+const pfLogo = (P, w = 92) => `<img class="pl" src="https://image.tmdb.org/t/p/w${w}/${P.logo}.png" alt="${P.name}" loading="lazy">`;
+const pfBadge = x => { const P = PLATFORMS[x.p]; return P ? `<span class="pf">${pfLogo(P)}${P.name}</span>` : ''; };
+const imdbBadge = x => { const [v, s] = rating(x); return `<span class="imdb${s === 'TMDB' ? ' tm' : ''}"><b>${s}</b>${v ? v.toFixed(1) : '—'}</span>`; };
+const chips = gs => gs.map(g => `<span class="chip">${esc(g)}</span>`).join('');
+const initials = n => (n.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') || '?').toUpperCase();
+const watchUrl = x => x.p ? PLATFORMS[x.p].url(encodeURIComponent(x.t)) : (x.watchLink || `https://www.justwatch.com/br/busca?q=${encodeURIComponent(x.t)}`);
+const skLines = (...w) => w.map(v => `<div class="sk-line skel" style="width:${v}%"></div>`).join('');
+
+/* ================= Render ================= */
+function heroSkeleton(){
+  $('#hero').innerHTML = `<div class="hero-bg skel"></div>
+    <div class="hero-content"><span class="eyebrow glass"><span class="dot"></span>Escolhendo ${state.type === 'movie' ? 'o filme' : 'a série'} de hoje…</span>
+    <div class="sk-line skel" style="width:82%;height:52px;margin-top:18px;border-radius:14px"></div>${skLines(60, 45)}
+    <div class="actions"><div class="btn skel" style="flex:1"></div></div></div>`;
+}
+function renderHero(x, m){
+  state.heroId = x.id;
+  const fav = state.profile.genres, P = PLATFORMS[x.p];
+  const reason = m.length ? `Combina com seu gosto por ${m.join(' e ')}`
+    : fav.length ? `Bem avaliado e em alta ${P ? P.prep + ' ' + P.name : 'hoje'}`
+    : `Escolha do dia · personalize no seu perfil`;
+  $('#hero').innerHTML = art(x, 'hero', 'hero-bg', `<div class="big">${esc(x.t)}</div>`) + `<div class="veil"></div>
+    <div class="hero-content swap">
+      <span class="eyebrow glass"><span class="dot"></span>Recomendação de hoje · ${dateShort}</span>
+      <h1>${esc(x.t)}</h1>
+      <div class="meta">${pfBadge(x)}${imdbBadge(x)}<span>${esc(x.y)}</span>${x.dur ? `<span class="sep">•</span><span>${esc(x.dur)}</span>` : ''}</div>
+      <div class="chips">${chips(x.g)}</div>
+      <p class="reason">${I.spark}${esc(reason)}</p>
+      <div class="actions">
+        <button class="btn btn-primary" data-open="${x.id}">Ver detalhes</button>
+        <button class="round glass${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
+        <button class="round glass" data-reroll aria-label="Outra sugestão">${I.shuffle}</button>
+      </div>
+    </div>
+    <button class="scroll-hint" data-totops>Top 10 de hoje${I.down}</button>`;
+}
+
+const topsHead = () => {
+  const label = state.type === 'movie' ? 'filmes' : 'séries';
+  return `<div class="tops-head"><h2>Em alta hoje</h2><p>${state.live ? `Top 10 de ${label} mais populares no Brasil` : `Top 10 de ${label} (exemplo)`} · ${dateLong}</p></div>
+    <button class="searchbar" data-nav="search">${I.search}Buscar filmes e séries…</button>`;
+};
+const rowHead = P => `<div class="row-head">${pfLogo(P, 154)}<div><h3>${P.name}</h3><small>Top 10 de ${state.type === 'movie' ? 'filmes' : 'séries'} hoje</small></div></div>`;
+function topsSkeleton(){
+  $('#tops').innerHTML = topsHead() + Object.values(PLATFORMS).map(P => `<div class="row">${rowHead(P)}
+    <div class="rail">${Array.from({ length: 4 }, (_, i) => `<div class="rank"><span class="n">${i + 1}</span><div class="poster skel"></div></div>`).join('')}</div></div>`).join('');
+}
+function renderTops(data){
+  $('#tops').innerHTML = topsHead() + Object.entries(PLATFORMS).filter(([p]) => data.tops[p]?.length).map(([p, P]) => `
+    <div class="row">${rowHead(P)}
+      <div class="rail">${data.tops[p].map((x, i) => `<div class="rank" data-open="${x.id}"><span class="n">${i + 1}</span>${poster(x)}</div>`).join('')}</div>
+    </div>`).join('');
+}
+
+let refreshTok = 0;
+async function refresh(){
+  const my = ++refreshTok;
+  const firstLoad = state.live && !state.data[state.type];
+  if (firstLoad) { heroSkeleton(); topsSkeleton(); }
+  const data = await getData(state.type);
+  if (my !== refreshTok) return;
+  renderTops(data);
+  const sel = pick(data.pool);
+  if (!sel) return;
+  if (state.live && !sel.x.full) {
+    try { await ensureDetails(sel.x); } catch {}
+    if (my !== refreshTok) return;
+  }
+  renderHero(sel.x, sel.m);
+}
+
+function renderDrawer(){
+  const pr = state.profile;
+  $('#drawer').innerHTML = `
+    <div class="brand"><i>${I.play}</i>O que ver hoje</div>
+    <button class="me" data-nav="profile">
+      <span class="avatar">${esc(initials(pr.name))}</span>
+      <span><b>${esc(pr.name || 'Olá!')}</b><small>${esc(pr.email || 'Complete seu perfil')}</small></span>
+    </button>
+    <nav class="nav">
+      <button data-nav="home">${I.home}Início</button>
+      <button data-nav="search">${I.search.replace(/18/g,'20')}Pesquisar</button>
+      <button data-nav="saved">${I.bookmark.replace(/22/g,'20')}Assistir depois${state.saved.length ? `<span class="badge">${state.saved.length}</span>` : ''}</button>
+      <button data-nav="profile">${I.user}Meu perfil</button>
+    </nav>
+    <div class="drawer-foot">
+      ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
+      ${state.live
+        ? `Dados: TMDB · Onde assistir: JustWatch<br><span style="opacity:.7">Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</span>`
+        : `Modo demonstração · adicione sua chave TMDB no Perfil para ver dados reais`}
+    </div>`;
+}
+
+function renderDetail(x){
+  const P = PLATFORMS[x.p], watch = watchUrl(x), pending = x.live && !x.full, sv = isSaved(x.id);
+  const similar = x.live
+    ? (x.recs || []).map(getItem).filter(Boolean)
+    : D.filter(y => y.id !== x.id && y.g.some(g => x.g.includes(g)))
+        .sort((a, b) => b.g.filter(g => x.g.includes(g)).length - a.g.filter(g => x.g.includes(g)).length || val(b) - val(a)).slice(0, 10);
+  const where = P
+    ? `<a class="where" href="${watch}" target="_blank" rel="noopener" >${pfLogo(P, 154)}<span><small>Onde assistir</small><b>${P.name}</b></span>${I.out}</a>`
+    : pending
+    ? `<div class="where"><span class="logo skel"></span><span><small>Onde assistir</small><b>Buscando…</b></span></div>`
+    : `<a class="where" href="${watch}" target="_blank" rel="noopener" style="--pc:#3a3a4a"><span class="logo">▶</span><span><small>Onde assistir</small><b>${x.others?.length ? esc(x.others.join(', ')) : 'Fora do streaming por assinatura'}</b></span>${I.out}</a>`;
+  $('#detail').innerHTML = art(x, 'hero', 'd-hero', `<div class="big">${esc(x.t)}</div><div class="veil"></div>`) + `
+    <div class="d-top">
+      <button class="icon-btn glass" data-close aria-label="Fechar">${I.down}</button>
+      <button class="icon-btn glass${sv ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar">${bookmarkSm}</button>
+    </div>
+    <div class="d-body">
+      <span class="type-tag">${x.type === 'movie' ? 'Filme' : 'Série'}</span>
+      <h2>${esc(x.t)}</h2>
+      ${x.o && x.o !== x.t ? `<p class="orig">${esc(x.o)}</p>` : ''}
+      ${where}
+      <div class="facts">
+        <div class="fact"><small>Nota</small><b>${imdbBadge(x)}</b></div>
+        <div class="fact"><small>Ano</small><b>${esc(x.y || '—')}</b></div>
+        <div class="fact"><small>${x.type === 'movie' ? 'Duração' : 'Formato'}</small><b style="font-size:14px">${esc(x.dur || (pending ? '…' : '—'))}</b></div>
+      </div>
+      ${x.g.length ? `<div class="d-sec"><h4>Categoria</h4><div class="chips">${chips(x.g)}</div></div>` : ''}
+      <div class="d-sec"><h4>Sinopse</h4><p class="syn">${esc(x.s)}</p></div>
+      <div class="actions">
+        <a class="btn btn-primary" href="${watch}" target="_blank" rel="noopener">${I.play}${P ? `Assistir ${P.prep} ${P.name}` : 'Ver onde assistir'}</a>
+        <button class="round glass${sv ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
+      </div>
+      ${similar.length ? `<div class="d-sec"><h4>Você também pode curtir</h4></div>` : ''}
+    </div>
+    <div class="d-rail"><div class="rail">${similar.map(y => `<div class="sim" data-open="${y.id}">${poster(y)}<p>${esc(y.t)}</p></div>`).join('')}</div></div>`;
+}
+async function openDetail(id){
+  const x = getItem(id);
+  if (!x) return;
+  const el = $('#detail');
+  state.detailId = id;
+  renderDetail(x);
+  el.scrollTop = 0;
+  openLayer(el);
+  if (x.live && !x.full) {
+    try { await ensureDetails(x); } catch { return; }
+    if (state.detailId === id && el.classList.contains('on')) { const st = el.scrollTop; renderDetail(x); el.scrollTop = st; }
+  }
+}
+
+function renderSaved(){
+  const list = state.saved.map(getItem).filter(Boolean);
+  $('#savedBody').innerHTML = list.length
+    ? `<p class="sec-p" style="margin:0 0 16px">${list.length} ${list.length > 1 ? 'títulos salvos' : 'título salvo'} para assistir depois</p>
+       <div class="grid">${list.map(x => `<div class="gitem" data-open="${x.id}">${poster(x)}<p>${esc(x.t)}</p></div>`).join('')}</div>`
+    : `<div class="empty"><div class="ic">${I.bookmark}</div><b>Sua lista está vazia</b>Toque no marcador em qualquer filme ou série para salvar e assistir depois.<br><button class="btn btn-primary" data-nav="search">Buscar títulos</button></div>`;
+}
+
+function renderProfile(){
+  const pr = state.profile;
+  $('#profileBody').innerHTML = `
+    <div class="prof-top">
+      <span class="avatar">${esc(initials(pr.name))}</span>
+      <b>${esc(pr.name || 'Seu nome')}</b><small>${esc(pr.email || 'seu@email.com')}</small>
+    </div>
+    <div class="stats">
+      <div><b>${state.saved.length}</b><small>Salvos</small></div>
+      <div><b>${pr.genres.length}</b><small>Gêneros</small></div>
+      <div><b>${pr.platforms.length || '—'}</b><small>Plataformas</small></div>
+    </div>
+    <div class="sec-t">Dados pessoais</div>
+    <div class="field"><label for="f-name">Nome</label><input id="f-name" value="${esc(pr.name)}" placeholder="Como podemos te chamar?" autocomplete="name"></div>
+    <div class="field"><label for="f-email">E-mail</label><input id="f-email" type="email" value="${esc(pr.email)}" placeholder="voce@email.com" autocomplete="email"></div>
+    <div class="field"><label for="f-birth">Data de nascimento</label><input id="f-birth" type="date" value="${esc(pr.birth)}"></div>
+
+    <div class="sec-t">Gêneros favoritos</div>
+    <p class="sec-p">Escolha pelo menos 3 — a recomendação do dia usa isso.</p>
+    <div class="chips" id="f-genres">${GENRES.map(g => `<button class="chip${pr.genres.includes(g) ? ' on' : ''}" data-chip="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+
+    <div class="sec-t">Plataformas que você assina</div>
+    <p class="sec-p">Só recomendamos o que você consegue assistir.</p>
+    <div class="chips" id="f-pf">${Object.entries(PLATFORMS).map(([k, P]) => `<button class="chip${pr.platforms.includes(k) ? ' on' : ''}" data-chip="${k}">${pfLogo(P)}${P.name}</button>`).join('')}</div>
+
+    <div class="sec-t">Dados reais</div>
+    <p class="sec-p">Com a chave gratuita do TMDB o app mostra títulos, pôsteres, sinopses e onde assistir de verdade. A chave do OMDb (opcional) traz a nota IMDb.</p>
+    <div class="field"><label for="f-tmdb">Chave TMDB</label><input id="f-tmdb" value="${esc(pr.tmdb)}" placeholder="${CONFIG.TMDB_KEY ? 'Já configurada no app' : 'api_key ou token de leitura'}" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="f-omdb">Chave OMDb (nota IMDb)</label><input id="f-omdb" value="${esc(pr.omdb)}" placeholder="${CONFIG.OMDB_KEY ? 'Já configurada no app' : 'opcional'}" autocomplete="off" spellcheck="false"></div>
+
+    <div class="save-bar"><button class="btn btn-primary" data-saveprofile>Salvar perfil</button></div>`;
+}
+
+/* ================= Pesquisa ================= */
+let searchTimer, searchTok = 0;
+const resRow = x => `<div class="res" data-open="${x.id}">${poster(x)}
+    <div class="res-info"><h4>${esc(x.t)}</h4>
+      <div class="meta">${pfBadge(x)}${imdbBadge(x)}<span>${esc(x.y)}</span></div>
+      <p>${x.type === 'movie' ? 'Filme' : 'Série'}${x.g.length ? ' · ' + esc(x.g.join(', ')) : ''}</p></div>
+    <button class="round${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar">${bookmarkSm}</button></div>`;
+const loadingRows = () => Array.from({ length: 5 }, () => `<div class="res"><div class="poster skel"></div><div class="res-info">${skLines(70, 45)}</div></div>`).join('');
+const emptyBox = (t, p) => `<div class="empty"><div class="ic">${I.search}</div><b>${t}</b>${p}</div>`;
+const genreChips = () => `<div class="label" style="margin-top:4px">Explorar por gênero</div><div class="chips">${GENRES.map(g => `<button class="chip" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
+const showList = (label, list) => {
+  $('#searchBody').innerHTML = list.length
+    ? `<div class="label" style="margin-top:4px">${label}</div>${list.map(resRow).join('')}`
+    : emptyBox('Nada encontrado', 'Tente outro título ou um gênero, como “Terror”.');
+};
+
+function renderSearch(){
+  const raw = $('#q').value.trim(), q = norm(raw), body = $('#searchBody');
+  clearTimeout(searchTimer);
+  const my = ++searchTok;
+  if (!q) {
+    if (!state.live) {
+      body.innerHTML = genreChips() + `<div class="label">Mais bem avaliados</div>` + [...D].sort((a, b) => val(b) - val(a)).slice(0, 8).map(resRow).join('');
+      return;
+    }
+    body.innerHTML = genreChips() + `<div class="label">Em alta hoje</div>` + loadingRows();
+    tmdb('/trending/all/day').then(j => {
+      if (my === searchTok) body.innerHTML = genreChips() + `<div class="label">Em alta hoje</div>` + j.results.filter(isTitle).slice(0, 10).map(r => resRow(fromTmdb(r))).join('');
+    }).catch(() => {});
+    return;
+  }
+  if (!state.live) {
+    const res = D.filter(x => norm([x.t, x.o, x.g.join(' '), PLATFORMS[x.p].name, x.type === 'movie' ? 'filme' : 'serie'].join(' ')).includes(q)).sort((a, b) => val(b) - val(a));
+    return showList(`${res.length} resultado${res.length > 1 ? 's' : ''}`, res);
+  }
+  body.innerHTML = loadingRows();
+  searchTimer = setTimeout(async () => {
+    try {
+      const j = await tmdb('/search/multi', { query: raw, include_adult: 'false' });
+      if (my !== searchTok) return;
+      const res = j.results.filter(isTitle).map(r => fromTmdb(r));
+      showList(`${res.length} resultado${res.length > 1 ? 's' : ''}`, res);
+    } catch { if (my === searchTok) body.innerHTML = emptyBox('Não foi possível buscar agora', 'Verifique sua conexão e tente de novo.'); }
+  }, 300);
+}
+async function searchGenre(g){
+  $('#q').value = '';
+  const my = ++searchTok, tipo = state.type === 'movie' ? 'Filmes' : 'Séries';
+  if (!state.live) return showList(g, D.filter(x => x.g.includes(g)).sort((a, b) => val(b) - val(a)));
+  $('#searchBody').innerHTML = loadingRows();
+  try {
+    const j = await tmdb(`/discover/${state.type}`, { ...streamBR, with_watch_providers: userProviders(), with_genres: GENRE_IDS[g][state.type].join('|'), sort_by: 'popularity.desc', 'vote_count.gte': '100' });
+    if (my === searchTok) showList(`${tipo} de ${g} nas suas plataformas`, j.results.map(r => fromTmdb(r, state.type)));
+  } catch { if (my === searchTok) $('#searchBody').innerHTML = emptyBox('Não foi possível buscar agora', 'Verifique sua conexão e tente de novo.'); }
+}
+
+/* ================= Camadas (drawer, páginas, detalhe) ================= */
+function openLayer(el){
+  if (!state.layers.includes(el)) state.layers.push(el);
+  el.classList.add('on');
+  if (el.id === 'drawer') $('#scrim').classList.add('on');
+  document.body.classList.add('lock');
+}
+function closeLayer(el = state.layers[state.layers.length - 1]){
+  if (!el) return;
+  el.classList.remove('on');
+  state.layers = state.layers.filter(l => l !== el);
+  if (el.id === 'drawer') $('#scrim').classList.remove('on');
+  if (!state.layers.length) document.body.classList.remove('lock');
+}
+function nav(where){
+  if (state.layers.includes($('#drawer'))) closeLayer($('#drawer'));
+  if (where === 'home') { state.layers.slice().forEach(l => closeLayer(l)); scrollTo({ top: 0 }); return; }
+  const page = $('#page-' + where);
+  state.layers.filter(l => l.classList.contains('page') && l !== page).forEach(l => closeLayer(l));
+  if (where === 'profile') renderProfile();
+  if (where === 'saved') renderSaved();
+  if (where === 'search') { renderSearch(); setTimeout(() => $('#q').focus(), 350); }
+  page.scrollTop = 0;
+  openLayer(page);
+}
+
+/* ================= Ações ================= */
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400);
+}
+function toggleSave(id){
+  const was = isSaved(id), x = getItem(id);
+  state.saved = was ? state.saved.filter(s => s !== id) : [id, ...state.saved];
+  if (was) delete state.savedItems[id];
+  else if (x?.live) state.savedItems[id] = { ...x, recs: undefined };
+  store.set('saved', state.saved);
+  store.set('savedItems', state.savedItems);
+  document.querySelectorAll(`[data-save="${id}"]`).forEach(b => b.classList.toggle('on', !was));
+  toast(was ? 'Removido da sua lista' : 'Salvo para assistir depois');
+  renderDrawer();
+  if ($('#page-saved').classList.contains('on')) renderSaved();
+}
+function setType(type){
+  if (type === state.type) return;
+  state.type = type; state.shuffle = 0; store.set('type', type);
+  syncSeg();
+  const th = $('#thumb'); th.classList.remove('goo'); void th.offsetWidth; th.classList.add('goo');
+  refresh();
+}
+function syncSeg(){
+  $('#seg').dataset.type = state.type;
+  document.querySelectorAll('#seg button').forEach(b => {
+    const on = b.dataset.type === state.type;
+    b.classList.toggle('on', on); b.setAttribute('aria-selected', on);
+  });
+}
+function saveProfile(){
+  const sel = id => [...document.querySelectorAll(`#${id} .chip.on`)].map(c => c.dataset.chip);
+  state.profile = {
+    name: $('#f-name').value.trim(), email: $('#f-email').value.trim(), birth: $('#f-birth').value,
+    genres: sel('f-genres'), platforms: sel('f-pf'), tmdb: $('#f-tmdb').value.trim(), omdb: $('#f-omdb').value.trim()
+  };
+  store.set('profile', state.profile);
+  state.live = !!tmdbKey();
+  state.data = { movie: null, tv: null };
+  state.shuffle = 0;
+  renderDrawer();
+  closeLayer($('#page-profile'));
+  toast('Perfil salvo · recomendação atualizada');
+  refresh();
+}
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  let el;
+  if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
+  if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
+  if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
+  if ((el = t.closest('[data-nav]'))) return nav(el.dataset.nav);
+  if ((el = t.closest('[data-chip]'))) return el.classList.toggle('on');
+  if ((el = t.closest('[data-genre]'))) return searchGenre(el.dataset.genre);
+  if (t.closest('[data-close]')) return closeLayer(t.closest('.sheet,.page'));
+  if (t.closest('[data-saveprofile]')) return saveProfile();
+  if (t.closest('[data-reroll]')) { state.shuffle++; return refresh(); }
+  if (t.closest('[data-totops]')) return $('#tops').scrollIntoView({ behavior: 'smooth' });
+  if (t.closest('#menuBtn')) { renderDrawer(); return openLayer($('#drawer')); }
+  if (t.closest('#scrim')) return closeLayer($('#drawer'));
+  if (t.closest('.hero') && !t.closest('.hero-content') && state.heroId) return openDetail(state.heroId);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLayer(); });
+$('#q').addEventListener('input', renderSearch);
+addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
+
+/* ================= Início ================= */
+state.live = !!tmdbKey();
+syncSeg();
+renderDrawer();
+refresh();
+</script>
+</body>
+</html>
