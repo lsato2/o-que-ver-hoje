@@ -1,0 +1,51 @@
+# Publica o site no GitHub Pages com os dados reais do dia (TMDB).
+# Roda a cada push na main e todo dia às 06:00 (Brasília). Pode ser disparado à mão em Actions.
+name: Publicar site com dados do dia
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Gerar dados do dia (TMDB)
+        run: node scripts/build-data.mjs
+        env:
+          TMDB_KEY: ${{ secrets.TMDB_KEY }}
+          OMDB_KEY: ${{ secrets.OMDB_KEY }}
+          PREV_URL: https://lsato2.github.io/o-que-ver-hoje/data.json
+
+      - name: Montar site
+        run: mkdir -p _site && cp index.html data.json _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

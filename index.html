@@ -805,7 +805,38 @@ function demoData(type){
   if (pf.length) { const f = pool.filter(x => pf.includes(x.p)); if (f.length) pool = f; }
   return { tops, pool };
 }
+/* ================= Dados reais do dia =================
+   data.json é gerado todo dia pelo GitHub Actions (scripts/build-data.mjs) com a chave guardada em segredo. */
+async function loadDaily(){
+  try {
+    const r = await fetch('data.json', { cache: 'no-cache' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    j.items.forEach(r => items.set(r.id, {
+      id: r.id, tid: +r.id.slice(1), type: r.type, live: true, full: true,
+      t: r.t, o: r.o, y: r.y, tscore: r.ts, vc: r.vc, pop: r.pop, iscore: r.ir || 0, imdbId: r.imdb,
+      gids: r.g, g: r.g.map(i => GENRE_NAMES[i]).filter(Boolean).slice(0, 3),
+      s: r.s || 'Sinopse ainda não disponível em português.', p: r.p, ps: r.ps, dur: r.dur,
+      img: { p: r.img[0], b: r.img[1] }
+    }));
+    return j;
+  } catch { return null; }
+}
+const catalog = () => state.daily ? state.daily.items.map(r => items.get(r.id)) : D;
+const realData = () => !!state.daily || state.live;
+// mostra a plataforma que o usuário assina, quando o título está em mais de uma
+const preferMine = x => { const pf = state.profile.platforms; if (x.ps && pf.length && !pf.includes(x.p)) x.p = x.ps.find(k => pf.includes(k)) || x.p; return x; };
+function dailyData(type){
+  const tops = {};
+  for (const k in PLATFORMS) tops[k] = (state.daily.tops[type][k] || []).map(getItem).filter(Boolean);
+  const pf = state.profile.platforms;
+  let pool = catalog().filter(x => x.type === type && val(x) >= 6.8 && x.vc >= (type === 'movie' ? 500 : 200));
+  if (pf.length) { const f = pool.filter(x => x.ps.some(k => pf.includes(k))); if (f.length) pool = f; }
+  pool.forEach(preferMine);
+  return { tops, pool: pool.length ? pool : Object.values(tops).flat() };
+}
 async function getData(type){
+  if (state.daily) return dailyData(type);
   if (!state.live) return demoData(type);
   try { return await loadLive(type); }
   catch (err) {
@@ -866,10 +897,15 @@ function renderHero(x, m){
 
 const topsHead = () => {
   const label = state.type === 'movie' ? 'filmes' : 'séries';
-  return `<div class="tops-head"><h2>Em alta hoje</h2><p>${state.live ? `Top 10 de ${label} mais populares no Brasil` : `Top 10 de ${label} (exemplo)`} · ${dateLong}</p></div>
+  return `<div class="tops-head"><h2>Em alta hoje</h2><p>${realData() ? `Os ${label} mais populares hoje no Brasil` : `Top 10 de ${label} (exemplo)`} · ${updatedLabel()}</p></div>
     <button class="searchbar" data-nav="search">${I.search}Buscar filmes e séries…</button>`;
 };
-const rowHead = P => `<div class="row-head">${pfLogo(P, 154)}<div><h3>${P.name}</h3><small>Top 10 de ${state.type === 'movie' ? 'filmes' : 'séries'} hoje</small></div></div>`;
+const updatedLabel = () => {
+  if (!state.daily) return dateLong;
+  const d = new Date(state.daily.updated);
+  return 'atualizado ' + (d.toDateString() === NOW.toDateString() ? 'hoje às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'em ' + d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }));
+};
+const rowHead = P => `<div class="row-head">${pfLogo(P, 154)}<div><h3>${P.name}</h3><small>${realData() ? 'Mais populares' : 'Top 10'} de ${state.type === 'movie' ? 'filmes' : 'séries'} hoje</small></div></div>`;
 function topsSkeleton(){
   $('#tops').innerHTML = topsHead() + Object.values(PLATFORMS).map(P => `<div class="row">${rowHead(P)}
     <div class="rail">${Array.from({ length: 4 }, (_, i) => `<div class="rank"><span class="n">${i + 1}</span><div class="poster skel"></div></div>`).join('')}</div></div>`).join('');
@@ -914,20 +950,20 @@ function renderDrawer(){
     </nav>
     <div class="drawer-foot">
       ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
-      ${state.live
-        ? `Dados: TMDB · Onde assistir: JustWatch<br><span style="opacity:.7">Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</span>`
-        : `Modo demonstração · adicione sua chave TMDB no Perfil para ver dados reais`}
+      ${state.daily ? `Dados reais · ${updatedLabel()}<br>` : state.live ? '' : 'Modo demonstração · dados de exemplo<br>'}
+      Dados: TMDB · Onde assistir: JustWatch<br><span style="opacity:.7">Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</span>
     </div>`;
 }
 
 function renderDetail(x){
   const P = PLATFORMS[x.p], watch = watchUrl(x), pending = x.live && !x.full, sv = isSaved(x.id);
-  const similar = x.live
-    ? (x.recs || []).map(getItem).filter(Boolean)
-    : D.filter(y => y.id !== x.id && y.g.some(g => x.g.includes(g)))
-        .sort((a, b) => b.g.filter(g => x.g.includes(g)).length - a.g.filter(g => x.g.includes(g)).length || val(b) - val(a)).slice(0, 10);
+  const gs = y => y.gids ? y.gids.filter(i => x.gids?.includes(i)) : y.g.filter(g => x.g.includes(g));
+  const similar = x.recs
+    ? x.recs.map(getItem).filter(Boolean)
+    : catalog().filter(y => y.id !== x.id && y.type === x.type && gs(y).length)
+        .sort((a, b) => gs(b).length - gs(a).length || val(b) - val(a)).slice(0, 10);
   const where = P
-    ? `<a class="where" href="${watch}" target="_blank" rel="noopener" >${pfLogo(P, 154)}<span><small>Onde assistir</small><b>${P.name}</b></span>${I.out}</a>`
+    ? `<a class="where" href="${watch}" target="_blank" rel="noopener" >${pfLogo(P, 154)}<span><small>Onde assistir</small><b>${P.name}</b>${x.ps?.length > 1 ? `<small style="text-transform:none;letter-spacing:0;margin-top:2px">Também ${x.ps.filter(k => k !== x.p).map(k => PLATFORMS[k].prep + ' ' + PLATFORMS[k].name).join(', ')}</small>` : ''}</span>${I.out}</a>`
     : pending
     ? `<div class="where"><span class="logo skel"></span><span><small>Onde assistir</small><b>Buscando…</b></span></div>`
     : `<a class="where" href="${watch}" target="_blank" rel="noopener" style="--pc:#3a3a4a"><span class="logo">▶</span><span><small>Onde assistir</small><b>${x.others?.length ? esc(x.others.join(', ')) : 'Fora do streaming por assinatura'}</b></span>${I.out}</a>`;
@@ -1003,10 +1039,10 @@ function renderProfile(){
     <p class="sec-p">Só recomendamos o que você consegue assistir.</p>
     <div class="chips" id="f-pf">${Object.entries(PLATFORMS).map(([k, P]) => `<button class="chip${pr.platforms.includes(k) ? ' on' : ''}" data-chip="${k}">${pfLogo(P)}${P.name}</button>`).join('')}</div>
 
-    <div class="sec-t">Dados reais</div>
+    ${state.daily ? '' : `<div class="sec-t">Dados reais</div>
     <p class="sec-p">Com a chave gratuita do TMDB o app mostra títulos, pôsteres, sinopses e onde assistir de verdade. A chave do OMDb (opcional) traz a nota IMDb.</p>
     <div class="field"><label for="f-tmdb">Chave TMDB</label><input id="f-tmdb" value="${esc(pr.tmdb)}" placeholder="${CONFIG.TMDB_KEY ? 'Já configurada no app' : 'api_key ou token de leitura'}" autocomplete="off" spellcheck="false"></div>
-    <div class="field"><label for="f-omdb">Chave OMDb (nota IMDb)</label><input id="f-omdb" value="${esc(pr.omdb)}" placeholder="${CONFIG.OMDB_KEY ? 'Já configurada no app' : 'opcional'}" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="f-omdb">Chave OMDb (nota IMDb)</label><input id="f-omdb" value="${esc(pr.omdb)}" placeholder="${CONFIG.OMDB_KEY ? 'Já configurada no app' : 'opcional'}" autocomplete="off" spellcheck="false"></div>`}
 
     <div class="save-bar"><button class="btn btn-primary" data-saveprofile>Salvar perfil</button></div>`;
 }
@@ -1032,6 +1068,10 @@ function renderSearch(){
   clearTimeout(searchTimer);
   const my = ++searchTok;
   if (!q) {
+    if (state.daily) {
+      body.innerHTML = genreChips() + `<div class="label">Em alta hoje no Brasil</div>` + catalog().slice(0, 10).map(x => resRow(preferMine(x))).join('');
+      return;
+    }
     if (!state.live) {
       body.innerHTML = genreChips() + `<div class="label">Mais bem avaliados</div>` + [...D].sort((a, b) => val(b) - val(a)).slice(0, 8).map(resRow).join('');
       return;
@@ -1042,8 +1082,9 @@ function renderSearch(){
     }).catch(() => {});
     return;
   }
-  if (!state.live) {
-    const res = D.filter(x => norm([x.t, x.o, x.g.join(' '), PLATFORMS[x.p].name, x.type === 'movie' ? 'filme' : 'serie'].join(' ')).includes(q)).sort((a, b) => val(b) - val(a));
+  if (state.daily || !state.live) {
+    const res = catalog().filter(x => norm([x.t, x.o, x.g.join(' '), (x.ps || [x.p]).map(k => PLATFORMS[k].name).join(' '), x.type === 'movie' ? 'filme' : 'serie'].join(' ')).includes(q))
+      .sort((a, b) => (b.pop ?? val(b)) - (a.pop ?? val(a))).slice(0, 40).map(preferMine);
     return showList(`${res.length} resultado${res.length > 1 ? 's' : ''}`, res);
   }
   body.innerHTML = loadingRows();
@@ -1059,6 +1100,11 @@ function renderSearch(){
 async function searchGenre(g){
   $('#q').value = '';
   const my = ++searchTok, tipo = state.type === 'movie' ? 'Filmes' : 'Séries';
+  if (state.daily) {
+    const pf = state.profile.platforms;
+    return showList(`${tipo} de ${g}${pf.length ? ' nas suas plataformas' : ''}`, catalog()
+      .filter(x => x.type === state.type && matchGenre(x, g) && (!pf.length || x.ps.some(k => pf.includes(k)))).slice(0, 40).map(preferMine));
+  }
   if (!state.live) return showList(g, D.filter(x => x.g.includes(g)).sort((a, b) => val(b) - val(a)));
   $('#searchBody').innerHTML = loadingRows();
   try {
@@ -1129,10 +1175,10 @@ function saveProfile(){
   const sel = id => [...document.querySelectorAll(`#${id} .chip.on`)].map(c => c.dataset.chip);
   state.profile = {
     name: $('#f-name').value.trim(), email: $('#f-email').value.trim(), birth: $('#f-birth').value,
-    genres: sel('f-genres'), platforms: sel('f-pf'), tmdb: $('#f-tmdb').value.trim(), omdb: $('#f-omdb').value.trim()
+    genres: sel('f-genres'), platforms: sel('f-pf'), tmdb: $('#f-tmdb')?.value.trim() ?? state.profile.tmdb, omdb: $('#f-omdb')?.value.trim() ?? state.profile.omdb
   };
   store.set('profile', state.profile);
-  state.live = !!tmdbKey();
+  state.live = !state.daily && !!tmdbKey();
   state.data = { movie: null, tv: null };
   state.shuffle = 0;
   renderDrawer();
@@ -1163,10 +1209,16 @@ $('#q').addEventListener('input', renderSearch);
 addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
 
 /* ================= Início ================= */
-state.live = !!tmdbKey();
 syncSeg();
 renderDrawer();
-refresh();
+heroSkeleton();
+topsSkeleton();
+loadDaily().then(daily => {
+  state.daily = daily;
+  state.live = !daily && !!tmdbKey();
+  renderDrawer();
+  refresh();
+});
 </script>
 </body>
 </html>
