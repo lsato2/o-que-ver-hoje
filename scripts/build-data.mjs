@@ -3,6 +3,8 @@
 //   TMDB_KEY  (obrigatória)  chave v3 da API do TMDB
 //   OMDB_KEY  (opcional)     chave do OMDb para a nota IMDb
 //   PREV_URL  (opcional)     data.json publicado anteriormente, para reaproveitar notas IMDb
+//   ARCHIVE_URL (opcional)   archive.json publicado anteriormente: títulos dos últimos 120 dias,
+//                            para links compartilhados antigos continuarem abrindo com capa
 import fs from 'node:fs';
 
 const KEY = process.env.TMDB_KEY;
@@ -116,8 +118,12 @@ if (process.env.PREV_URL) {
 }
 const items = [];
 const stats = { br: 0, pt: 0, gen: 0 };
+const failed = [];
 await pool([...seen.entries()], 8, async ([id, m]) => {
-  const d = await tmdb(`/${m.type}/${m.tid}`, { append_to_response: 'watch/providers,external_ids,translations' });
+  // um título com erro no TMDB fica de fora do dia, sem derrubar a atualização inteira
+  let d;
+  try { d = await tmdb(`/${m.type}/${m.tid}`, { append_to_response: 'watch/providers,external_ids,translations' }); }
+  catch (e) { failed.push(id); console.log(`pulando ${id}: ${e.message}`); return; }
   const [s, sl] = sinopse(d, m.type);
   stats[sl]++;
   const flat = d['watch/providers']?.results?.BR?.flatrate || [];
@@ -153,13 +159,52 @@ for (const x of items) {
 }
 
 items.sort((a, b) => b.pop - a.pop);
+
+// 3b) Conferência antes de publicar: se o dia veio ruim, para aqui e o site continua com os dados de ontem
+const ids = new Set(items.map(x => x.id));
+for (const type of ['movie', 'tv']) for (const pf in tops[type]) tops[type][pf] = tops[type][pf].filter(id => ids.has(id));
+const problems = [];
+if (items.length < 300) problems.push(`só ${items.length} títulos (mínimo 300)`);
+if (failed.length > seen.size * .1) problems.push(`${failed.length} de ${seen.size} títulos falharam no TMDB`);
+for (const type of ['movie', 'tv']) {
+  const empty = Object.keys(PLATFORMS).filter(pf => (tops[type][pf] || []).length < 5);
+  if (empty.length > 1) problems.push(`${type}: poucas opções em ${empty.join(', ')}`);
+}
+if (problems.length) throw new Error('Dados do dia reprovados na conferência: ' + problems.join('; '));
+if (failed.length) console.log(`${failed.length} títulos pulados por erro no TMDB`);
+
 fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), netflixWeek, tops, items }));
+
+// 3c) Arquivo dos títulos dos últimos 120 dias: quem recebeu um link antigo ainda vê a capa e abre o título
+const today = new Date().toISOString().slice(0, 10);
+const cutoff = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10);
+let archive = {};
+if (process.env.ARCHIVE_URL) {
+  for (let i = 0; ; i++) {
+    try {
+      const r = await fetch(process.env.ARCHIVE_URL);
+      if (r.status === 404) { console.log('archive.json ainda não existe: começando do zero'); break; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      archive = await r.json();
+      break;
+    } catch (e) {
+      // sem o arquivo anterior, publicar agora apagaria o histórico de links: melhor parar e tentar amanhã
+      if (i >= 3) throw new Error('Não foi possível ler o archive.json anterior: ' + e.message);
+      await sleep(3000 * (i + 1));
+    }
+  }
+}
+for (const id in archive) if (!(archive[id].seen >= cutoff)) delete archive[id];
+for (const x of items) archive[x.id] = { ...x, seen: today };
+fs.writeFileSync('archive.json', JSON.stringify(archive));
 // 4) Uma página por título para o link compartilhado mostrar a capa no WhatsApp.
 //    O WhatsApp não roda JavaScript: a prévia vem das tags og:* da própria página, que depois redireciona para o site.
 const SITE = 'https://lsato2.github.io/o-que-ver-hoje/';
 const html = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 fs.mkdirSync('t', { recursive: true });
-for (const x of items) {
+for (const x of Object.values(archive)) {
+  // dados do título para o site abrir um link antigo (o título não está mais na lista do dia)
+  if (!ids.has(x.id)) fs.writeFileSync(`t/${x.id}.json`, JSON.stringify(x));
   const dest = `${SITE}?t=${x.id}`;
   const kind = x.type === 'movie' ? 'Filme' : 'Série';
   const img = x.img[0] ? `https://image.tmdb.org/t/p/w500${x.img[0]}` : `${SITE}og.jpg`;
@@ -178,4 +223,5 @@ ${x.img[0] ? '<meta property="og:image:width" content="500"><meta property="og:i
 </head><body><script>location.replace(${JSON.stringify(dest)})</script><a href="${dest}">Abrir no O que ver hoje</a></body></html>`);
 }
 console.log(`sinopses: ${stats.br} pt-BR, ${stats.pt} pt-PT, ${stats.gen} sem sinopse em português`);
+console.log(`archive.json: ${Object.keys(archive).length} títulos com link ativo`);
 console.log(`data.json: ${items.length} títulos, ${items.filter(x => x.ir).length} com nota IMDb, ${(fs.statSync('data.json').size / 1024).toFixed(0)} KB`);

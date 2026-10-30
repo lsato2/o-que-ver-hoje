@@ -917,19 +917,31 @@ function demoData(type){
 }
 /* ================= Dados reais do dia =================
    data.json é gerado todo dia pelo GitHub Actions (scripts/build-data.mjs) com a chave guardada em segredo. */
+const fromDaily = r => ({
+  id: r.id, tid: +r.id.slice(1), type: r.type, live: true, full: true,
+  t: r.t, o: r.o, y: r.y, tscore: r.ts, vc: r.vc, pop: r.pop, iscore: r.ir || 0, imdbId: r.imdb,
+  gids: r.g, g: r.g.map(i => GENRE_NAMES[i]).filter(Boolean).slice(0, 3),
+  s: r.s || 'Sinopse ainda não disponível em português.', p: r.p, ps: r.ps, dur: r.dur,
+  img: { p: r.img[0], b: r.img[1] }
+});
 async function loadDaily(){
   try {
     const r = await fetch('data.json', { cache: 'no-cache' });
     if (!r.ok) return null;
     const j = await r.json();
-    j.items.forEach(r => items.set(r.id, {
-      id: r.id, tid: +r.id.slice(1), type: r.type, live: true, full: true,
-      t: r.t, o: r.o, y: r.y, tscore: r.ts, vc: r.vc, pop: r.pop, iscore: r.ir || 0, imdbId: r.imdb,
-      gids: r.g, g: r.g.map(i => GENRE_NAMES[i]).filter(Boolean).slice(0, 3),
-      s: r.s || 'Sinopse ainda não disponível em português.', p: r.p, ps: r.ps, dur: r.dur,
-      img: { p: r.img[0], b: r.img[1] }
-    }));
+    j.items.forEach(r => items.set(r.id, fromDaily(r)));
     return j;
+  } catch { return null; }
+}
+// título que saiu da lista do dia (link antigo): os dados ficam guardados em t/<id>.json por 120 dias
+async function loadArchived(id){
+  if (!/^[mt]\d+$/.test(id)) return null;
+  try {
+    const r = await fetch(`t/${id}.json`);
+    if (!r.ok) return null;
+    const x = fromDaily(await r.json());
+    items.set(id, x);
+    return x;
   } catch { return null; }
 }
 const catalog = () => state.daily ? state.daily.items.map(r => items.get(r.id)) : D;
@@ -1374,13 +1386,13 @@ async function share(id){
   catch { toast('Não foi possível copiar o link'); }
 }
 // link compartilhado (?t=id) abre direto o título
-function openShared(){
+async function openShared(){
   const id = new URLSearchParams(location.search).get('t');
   if (!id) return;
   // tira o ?t= do endereço: recarregar a página não reabre o título
   history.replaceState(null, '', location.pathname);
-  if (getItem(id)) openDetail(id);
-  else toast('Esse título não está mais na lista de hoje');
+  if (getItem(id) || await loadArchived(id)) openDetail(id);
+  else toast('Não encontramos esse título · veja a recomendação de hoje');
 }
 /* ---------- Modal de vidro ---------- */
 function openModal(html){

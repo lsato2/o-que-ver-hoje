@@ -37,9 +37,14 @@ jobs:
           TMDB_KEY: ${{ secrets.TMDB_KEY }}
           OMDB_KEY: ${{ secrets.OMDB_KEY }}
           PREV_URL: https://lsato2.github.io/o-que-ver-hoje/data.json
+          ARCHIVE_URL: https://lsato2.github.io/o-que-ver-hoje/archive.json
+
+      # se a conferência falhar, nada é publicado e o site continua com a versão anterior
+      - name: Conferir antes de publicar
+        run: node scripts/check-site.mjs
 
       - name: Montar site
-        run: mkdir -p _site && cp -r index.html 404.html data.json manifest.webmanifest og.jpg *.png t _site/
+        run: mkdir -p _site && cp -r index.html 404.html data.json archive.json manifest.webmanifest og.jpg *.png t _site/
 
       - uses: actions/configure-pages@v5
 
