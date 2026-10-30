@@ -728,7 +728,7 @@ const store = {
 };
 const fmtRuntime = m => m >= 60 ? `${Math.floor(m/60)}h${m % 60 ? ' ' + m % 60 + 'min' : ''}` : `${m}min`;
 
-const SYNCED = ['saved', 'savedItems', 'watched', 'profile'];
+const SYNCED = ['saved', 'savedItems', 'watched', 'profile', 'skipped', 'pick'];
 const NOW = new Date();
 const DAY = NOW.getFullYear()*10000 + (NOW.getMonth()+1)*100 + NOW.getDate();
 const dateShort = NOW.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
@@ -749,6 +749,8 @@ const state = {
   savedItems: store.get('savedItems',{}),
   profile: Object.assign({name:'',email:'',birth:'',platforms:[],genres:[],tmdb:'',omdb:''}, store.get('profile',{})),
   imdbCache: store.get('imdb',{}),
+  skipped: store.get('skipped',{}),  // { id: at } títulos marcados como "Não tenho interesse"
+  pick: store.get('pick',{}),        // { day, movie: id, tv: id } a recomendação fixa do dia
   live: false,
   data: { movie:null, tv:null },
   heroId: null,
@@ -767,6 +769,7 @@ const isTitle = r => r.media_type === 'movie' || r.media_type === 'tv';
 const I = {
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   dots:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
+  nope:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg>',
   seen:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/></svg>',
   thumbs2:'<svg viewBox="0 0 30 24"><g fill="currentColor"><path opacity=".55" transform="translate(7 -1)" d="M7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/><path d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></g></svg>',
   thumb:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></svg>',
@@ -959,22 +962,36 @@ async function getData(type){
 const isWatched = id => !!state.watched[id];
 // gosto aprendido: gêneros em comum com o que a pessoa curtiu (+) ou não curtiu (−)
 function taste(x){
+  const common = y => y.gids && x.gids ? y.gids.filter(g => x.gids.includes(g)).length : y.g.filter(g => x.g.includes(g)).length;
   let t = 0;
   for (const [id, w] of Object.entries(state.watched)) {
     const y = w.r && getItem(id);
-    if (!y || y.id === x.id) continue;
-    t += w.r * (y.gids && x.gids ? y.gids.filter(g => x.gids.includes(g)).length : y.g.filter(g => x.g.includes(g)).length);
+    if (y && y.id !== x.id) t += w.r * common(y);
+  }
+  // "Não tenho interesse" pesa menos que um "Não gostei"
+  for (const id in state.skipped) {
+    const y = getItem(id);
+    if (y && y.id !== x.id) t -= .5 * common(y);
   }
   return Math.max(-3, Math.min(3, t * .4));
 }
+const isSkipped = id => !!state.skipped[id];
+function score(x){
+  const m = state.profile.genres.filter(g => matchGenre(x, g)), t = taste(x);
+  return { x, m, like: t >= .8, k: val(x) + m.length * 1.3 + t + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
+}
 function pick(pool){
-  const fav = state.profile.genres;
-  const fresh = pool.filter(x => !isWatched(x.id));
-  const ranked = (fresh.length ? fresh : pool).map(x => {
-    const m = fav.filter(g => matchGenre(x, g)), t = taste(x);
-    return { x, m, like: t >= .8, k: val(x) + m.length * 1.3 + t + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
-  }).sort((a, b) => b.k - a.k);
-  return ranked[0];
+  const fresh = pool.filter(x => !isWatched(x.id) && !isSkipped(x.id));
+  return (fresh.length ? fresh : pool).map(score).sort((a, b) => b.k - a.k)[0];
+}
+// uma recomendação por dia: só troca se a pessoa já assistiu, não tem interesse ou mudou o perfil
+function todayPick(pool){
+  if (state.pick.day !== DAY) state.pick = { day: DAY };
+  const kept = getItem(state.pick[state.type]);
+  if (kept && (state.live || catalog().includes(kept)) && !isWatched(kept.id) && !isSkipped(kept.id)) return score(preferMine(kept));
+  const sel = pick(pool);
+  if (sel) { state.pick[state.type] = sel.x.id; store.set('pick', state.pick); }
+  return sel;
 }
 
 const isSaved = id => state.saved.includes(id);
@@ -1011,6 +1028,7 @@ function renderHero(x, m, like){
           <button role="menuitem" class="${isWatched(x.id) ? 'seen' : ''}" data-watched="${x.id}">${I.seen}Já assisti</button>
           <button role="menuitem" class="${isSaved(x.id) ? 'on' : ''}" data-save="${x.id}">${I.bookmark}Assistir depois</button>
           <button role="menuitem" data-share="${x.id}">${I.share}Compartilhar</button>
+          <button role="menuitem" data-skip="${x.id}">${I.nope}Não tenho interesse</button>
         </div>
       </div>
       <div class="chips">${chips(x.g)}</div>
@@ -1020,6 +1038,7 @@ function renderHero(x, m, like){
         <button class="round glass${isWatched(x.id) ? ' seen' : ''}" data-watched="${x.id}" aria-label="Já assisti">${I.seen}</button>
         <button class="round glass${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
         <button class="round glass" data-share="${x.id}" aria-label="Compartilhar">${I.share}</button>
+        <button class="round glass" data-skip="${x.id}" aria-label="Não tenho interesse" title="Não tenho interesse">${I.nope}</button>
       </div>
     </div>
     <button class="scroll-hint" data-totops>Em alta hoje${I.down}</button>`;
@@ -1068,7 +1087,7 @@ async function refresh(){
   const data = await getData(state.type);
   if (my !== refreshTok) return;
   renderTops(data);
-  const sel = pick(data.pool);
+  const sel = todayPick(data.pool);
   if (!sel) return;
   if (state.live && !sel.x.full) {
     try { await ensureDetails(sel.x); } catch {}
@@ -1279,12 +1298,36 @@ function lockPage(){
   const b = document.body;
   if (b.classList.contains('lock')) return;
   lockY = scrollY; b.style.top = `-${lockY}px`; b.classList.add('lock');
+  armBack();
 }
 function unlockPage(){
   const b = document.body;
   if (!b.classList.contains('lock') || state.layers.length || modalOpen() || $('.hero-content.menu-on')) return;
   b.classList.remove('lock'); b.style.top = '';
   document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, lockY); document.documentElement.style.scrollBehavior = '';
+  if (onBackEntry()) { backByTap = true; history.back(); }
+}
+// Botão Voltar do Android e gesto de voltar do iPhone: fecham o que está aberto em vez de sair do site.
+// Enquanto houver menu, janela ou página aberta, existe uma entrada a mais no histórico.
+let backByTap = false;
+const onBackEntry = () => !!history.state?.ov;
+history.scrollRestoration = 'manual';
+if (onBackEntry()) history.replaceState(null, ''); // recarregou com algo aberto
+function armBack(){ if (!onBackEntry()) history.pushState({ ov: 1 }, ''); }
+addEventListener('popstate', () => {
+  if (onBackEntry()) return;
+  // voltou porque a tela foi fechada por um toque; se outra já abriu nesse meio-tempo, recria a entrada
+  if (backByTap) { backByTap = false; if (document.body.classList.contains('lock')) armBack(); return; }
+  if ($('.hero-content.menu-on')) closeMenu();
+  else if (modalOpen()) closeModal();
+  else closeLayer();
+  if (document.body.classList.contains('lock')) armBack();
+});
+function closeMenu(){
+  const hm = $('.hero-content.menu-on');
+  if (!hm) return;
+  hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false');
+  unlockPage();
 }
 function openLayer(el){
   if (!state.layers.includes(el)) state.layers.push(el);
@@ -1331,7 +1374,11 @@ async function share(id){
 // link compartilhado (?t=id) abre direto o título
 function openShared(){
   const id = new URLSearchParams(location.search).get('t');
-  if (id && getItem(id)) openDetail(id);
+  if (!id) return;
+  // tira o ?t= do endereço: recarregar a página não reabre o título
+  history.replaceState(null, '', location.pathname);
+  if (getItem(id)) openDetail(id);
+  else toast('Esse título não está mais na lista de hoje');
 }
 /* ---------- Modal de vidro ---------- */
 function openModal(html){
@@ -1379,6 +1426,12 @@ function rate(id, r){
   // a recomendação do dia troca por outra que a pessoa ainda não viu
   if (id === state.heroId) { setTimeout(refresh, 450); }
   maybeInvite();
+}
+function skip(id){
+  state.skipped[id] = Date.now();
+  store.set('skipped', state.skipped);
+  toast('Entendido, vamos sugerir outro título');
+  if (id === state.heroId) setTimeout(refresh, 450);
 }
 function unwatch(id){
   delete state.watched[id];
@@ -1454,11 +1507,14 @@ function syncSeg(){
 }
 function saveProfile(){
   const sel = id => [...document.querySelectorAll(`#${id} .chip.on`)].map(c => c.dataset.chip);
+  const tasteOf = p => JSON.stringify([p.genres, p.platforms]), before = tasteOf(state.profile);
   state.profile = {
     name: $('#f-name').value.trim(), email: $('#f-email').value.trim(), birth: $('#f-birth').value,
     genres: sel('f-genres'), platforms: sel('f-pf'), tmdb: $('#f-tmdb')?.value.trim() ?? state.profile.tmdb, omdb: $('#f-omdb')?.value.trim() ?? state.profile.omdb
   };
   store.set('profile', state.profile);
+  // mudou gêneros ou plataformas: a recomendação do dia é escolhida de novo
+  if (tasteOf(state.profile) !== before) { state.pick = { day: DAY }; store.set('pick', state.pick); }
   state.live = !state.daily && !!tmdbKey();
   state.data = { movie: null, tv: null };
   
@@ -1473,9 +1529,9 @@ document.addEventListener('click', e => {
   let el;
   // menu ⋯ da recomendação: tocar fora só fecha o menu
   const hm = document.querySelector('.hero-content.menu-on');
-  if (hm && !t.closest('.hmenu')) { hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false'); unlockPage(); return; }
+  if (hm && !t.closest('.hmenu')) return closeMenu();
   if (t.closest('[data-more]')) { t.closest('.hero-content').classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); lockPage(); return; }
-  if (t.closest('.hmenu')) { t.closest('.hero-content').classList.remove('menu-on'); unlockPage(); }
+  if (t.closest('.hmenu')) closeMenu();
   if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
   if (modalOpen() && t.id === 'modal') return closeModal();
   if ((el = t.closest('[data-rate]'))) return rate(el.dataset.id, +el.dataset.rate);
@@ -1487,6 +1543,7 @@ document.addEventListener('click', e => {
   if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
   if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
   if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
+  if ((el = t.closest('[data-skip]'))) return skip(el.dataset.skip);
   if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
   if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
   if ((el = t.closest('[data-nav]'))) return nav(el.dataset.nav);
@@ -1557,6 +1614,9 @@ async function pullAndMerge(user){
     state.watched = watched;
     state.saved = [...new Set([...state.saved, ...(r.saved || [])])].filter(id => !watched[id]);
     state.savedItems = { ...(r.savedItems || {}), ...state.savedItems };
+    state.skipped = { ...(r.skipped || {}), ...state.skipped };
+    // a recomendação de hoje já escolhida na conta vale para todos os aparelhos
+    if (r.pick?.day === DAY) state.pick = { ...(state.pick.day === DAY ? state.pick : {}), ...r.pick };
     state.profile = { ...lp, ...rp, tmdb: lp.tmdb, omdb: lp.omdb,
       name: rp.name || lp.name || user.displayName || '', email: user.email || rp.email || '',
       genres: rp.genres?.length ? rp.genres : lp.genres, platforms: rp.platforms?.length ? rp.platforms : lp.platforms, registered: true };
@@ -1581,7 +1641,7 @@ async function push(){
     const x = state.savedItems[id] || (items.get(id)?.live ? items.get(id) : null);
     if (x) savedItems[id] = slim(x);
   }
-  try { await fb.F.setDoc(userDoc(), JSON.parse(JSON.stringify({ profile, saved: state.saved, watched: state.watched, savedItems, updatedAt: Date.now() }))); }
+  try { await fb.F.setDoc(userDoc(), JSON.parse(JSON.stringify({ profile, saved: state.saved, watched: state.watched, skipped: state.skipped, pick: state.pick, savedItems, updatedAt: Date.now() }))); }
   catch (e) { console.warn('Falha ao sincronizar:', e); }
 }
 async function login(){
@@ -1601,7 +1661,7 @@ async function logout(){
   await fb.A.signOut(fb.auth);
   state.user = null;
   // aparelho pode ser compartilhado: limpa os dados locais (eles continuam salvos na conta)
-  state.saved = []; state.watched = {}; state.savedItems = {};
+  state.saved = []; state.watched = {}; state.savedItems = {}; state.skipped = {};
   state.profile = { name: '', email: '', birth: '', platforms: [], genres: [], tmdb: state.profile.tmdb, omdb: state.profile.omdb };
   for (const k of SYNCED) store.set(k, state[k]);
   closeLayer();
