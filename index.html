@@ -1320,7 +1320,9 @@ function toast(msg){
 }
 async function share(id){
   const x = getItem(id), P = PLATFORMS[x.p];
-  const url = location.origin + location.pathname + '?t=' + encodeURIComponent(id);
+  // com os dados do dia, cada título tem uma página própria cuja prévia no WhatsApp mostra a capa
+  const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+  const url = state.daily && /^[mt]\d+$/.test(id) ? `${base}t/${id}.html` : `${base}?t=${encodeURIComponent(id)}`;
   const text = `Hoje eu recomendo: ${x.t}${P ? ` (${P.prep} ${P.name})` : ''} 🍿`;
   if (navigator.share) { try { await navigator.share({ title: `${x.t} · O que ver hoje`, text, url }); } catch {} return; }
   try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('Link copiado · é só colar no WhatsApp'); }

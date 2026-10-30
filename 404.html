@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>O que ver hoje</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;background:#0a0a0f}</style>
+<script>
+  // link de título antigo (/t/m123.html que saiu dos dados do dia): abre o título no site; o resto vai para a página inicial
+  var m = location.pathname.match(/\/t\/([mt]\d+)\.html$/);
+  location.replace('/o-que-ver-hoje/' + (m ? '?t=' + m[1] : ''));
+</script>
+</head><body></body></html>
