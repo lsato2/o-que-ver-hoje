@@ -28,6 +28,28 @@ async function pool(list, n, fn){
   const q = [...list];
   await Promise.all(Array.from({ length: n }, async () => { while (q.length) await fn(q.shift()); }));
 }
+const GENRES = { 28:'ação',12:'aventura',16:'animação',35:'comédia',80:'crime',99:'documentário',18:'drama',10751:'família',14:'fantasia',36:'história',27:'terror',10402:'música',9648:'mistério',10749:'romance',878:'ficção científica',10770:'filme de TV',53:'suspense',10752:'guerra',37:'faroeste',10759:'ação e aventura',10762:'infantil',10763:'notícias',10764:'reality',10765:'ficção e fantasia',10766:'novela',10767:'talk show',10768:'guerra e política' };
+// sinopse sempre em português: pt-BR → pt-PT → descrição curta gerada (nunca em inglês)
+function sinopse(d, type){
+  if (d.overview?.trim()) return [d.overview.trim(), 'br'];
+  const tr = d.translations?.translations || [];
+  const pt = tr.find(t => t.iso_639_1 === 'pt' && t.iso_3166_1 === 'BR' && t.data?.overview?.trim())
+          || tr.find(t => t.iso_639_1 === 'pt' && t.data?.overview?.trim());
+  if (pt) return [pt.data.overview.trim(), 'pt'];
+  const g = (d.genres || []).map(x => GENRES[x.id]).filter(Boolean).slice(0, 2);
+  const tipo = type === 'movie' ? 'Filme' : 'Série';
+  const ano = (d.release_date || d.first_air_date || '').slice(0, 4);
+  return [`${tipo}${g.length ? ' de ' + g.join(' e ') : ''}${ano ? (type === 'movie' ? ' lançado em ' : ' que estreou em ') + ano : ''}. A sinopse em português ainda não foi publicada.`, 'gen'];
+}
+// título legível: se vier em alfabeto não latino (ex.: japonês, telugu), usa o nome em português ou o internacional
+function titulo(d){
+  const t = d.title || d.name;
+  if (!/[^\p{Script=Latin}\p{N}\p{P}\p{Z}\p{S}]/u.test(t)) return t;
+  const tr = d.translations?.translations || [];
+  const pick = l => tr.find(x => x.iso_639_1 === l && (x.data?.title || x.data?.name))?.data;
+  const alt = pick('pt') || pick('en') || pick('es');
+  return alt?.title || alt?.name || t;
+}
 const key = (type, id) => (type === 'movie' ? 'm' : 't') + id;
 const fmtRuntime = m => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ' ' + m % 60 + 'min' : ''}` : `${m}min`;
 
@@ -50,17 +72,18 @@ if (process.env.PREV_URL) {
   try { (await (await fetch(process.env.PREV_URL)).json()).items.forEach(x => { if (x.imdb && x.ir) prevImdb[x.imdb] = x.ir; }); } catch {}
 }
 const items = [];
+const stats = { br: 0, pt: 0, gen: 0 };
 await pool([...seen.entries()], 8, async ([id, m]) => {
-  const d = await tmdb(`/${m.type}/${m.tid}`, { append_to_response: 'watch/providers,external_ids' });
-  let s = d.overview;
-  if (!s) s = (await tmdb(`/${m.type}/${m.tid}`, { language: 'en-US' })).overview || '';
+  const d = await tmdb(`/${m.type}/${m.tid}`, { append_to_response: 'watch/providers,external_ids,translations' });
+  const [s, sl] = sinopse(d, m.type);
+  stats[sl]++;
   const flat = d['watch/providers']?.results?.BR?.flatrate || [];
   const ps = [...new Set(flat.map(v => PROVIDER_MAP[v.provider_id]).filter(Boolean))];
   if (!ps.length) ps.push(m.from);
   const n = d.number_of_seasons;
   items.push({
     id, type: m.type,
-    t: d.title || d.name, o: d.original_title || d.original_name,
+    t: titulo(d), o: d.original_title || d.original_name,
     y: (d.release_date || d.first_air_date || '').slice(0, 4),
     ts: Math.round((d.vote_average || 0) * 10) / 10, vc: d.vote_count || 0,
     pop: Math.round(m.pop),
@@ -88,4 +111,5 @@ for (const x of items) {
 
 items.sort((a, b) => b.pop - a.pop);
 fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), tops, items }));
+console.log(`sinopses: ${stats.br} pt-BR, ${stats.pt} pt-PT, ${stats.gen} sem sinopse em português`);
 console.log(`data.json: ${items.length} títulos, ${items.filter(x => x.ir).length} com nota IMDb, ${(fs.statSync('data.json').size / 1024).toFixed(0)} KB`);
