@@ -264,6 +264,9 @@ svg{display:block;flex:none}
 .seenb{position:absolute;top:8px;left:8px;z-index:1;font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(10,10,15,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18)}
 .official{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:5px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(229,9,20,.55),rgba(229,9,20,.25));border:1px solid rgba(255,255,255,.2)}
 .sim.trend{width:120px}
+@media (min-width:900px){.sim.trend{width:150px}.rail:has(.trend){gap:12px}}
+@media (min-width:1280px){.sim.trend{width:180px}.rank .poster{width:200px!important}.rank .n{font-size:180px!important;margin-right:-12px}.sim.trend p{font-size:13px}}
+@media (min-width:1700px){.sim.trend{width:210px}.rank .poster{width:230px!important}.rank .n{font-size:205px!important}}
 .modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(5,5,10,.62);
   backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);opacity:0;pointer-events:none;transition:opacity .3s}
 .modal.on{opacity:1;pointer-events:auto}
@@ -901,7 +904,10 @@ const realData = () => !!state.daily || state.live;
 const preferMine = x => { const pf = state.profile.platforms; if (x.ps && pf.length && !pf.includes(x.p)) x.p = x.ps.find(k => pf.includes(k)) || x.p; return x; };
 function dailyData(type){
   const tops = {};
-  for (const k in PLATFORMS) tops[k] = (state.daily.tops[type][k] || []).map(getItem).filter(Boolean);
+  for (const k in PLATFORMS) {
+    const top = (state.daily.tops[type][k] || []).map(getItem).filter(Boolean);
+    tops[k] = isOfficial(k) ? top : [...new Set([...top, ...catalog().filter(x => x.type === type && x.ps?.includes(k))])].slice(0, 24);
+  }
   const pf = state.profile.platforms;
   let pool = catalog().filter(x => x.type === type && val(x) >= 6.8 && x.vc >= (type === 'movie' ? 500 : 200));
   if (pf.length) { const f = pool.filter(x => x.ps.some(k => pf.includes(k))); if (f.length) pool = f; }
