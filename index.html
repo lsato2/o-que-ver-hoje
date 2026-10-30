@@ -155,6 +155,33 @@ svg{display:block;flex:none}
 .score{position:absolute;top:8px;right:8px;z-index:1;font-size:11px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .score::before{content:"★ ";color:var(--imdb)}
 
+
+/* celular: recomendação limpa, ações no ⋯ e arrastar para trocar */
+.kick,.more,.hmenu,.swipe{display:none}
+.mrow{position:relative;display:flex;align-items:center;gap:12px}
+@media (max-width:899px){
+  .hero .eyebrow,.hero .chips,.hero .reason,.hero .actions{display:none}
+  .kick{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff9a7a}
+  .hero h1{margin:10px 0 12px}
+  .hero .meta{flex:1;min-width:0;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+  .more{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;margin-left:auto;transition:background .2s,transform .15s}
+  .more svg{width:22px;height:22px}.more .c{display:none}
+  .menu-on .more{background:rgba(255,255,255,.28)}.menu-on .more .o{display:none}.menu-on .more .c{display:block}
+  .hmenu{display:flex;flex-direction:column;position:absolute;right:0;bottom:calc(100% + 12px);min-width:200px;padding:5px;border-radius:22px;z-index:5;
+    background:rgba(22,22,30,.82);transform-origin:bottom right;opacity:0;transform:scale(.9) translateY(8px);pointer-events:none;transition:opacity .2s,transform .25s var(--ease)}
+  .menu-on .hmenu{opacity:1;transform:none;pointer-events:auto}
+  .hmenu button{display:flex;align-items:center;gap:12px;padding:13px 14px;font-weight:700;font-size:15px;text-align:left;border-radius:16px}
+  .hmenu button+button{box-shadow:0 -1px 0 rgba(255,255,255,.1)}
+  .hmenu button:active{background:rgba(255,255,255,.1)}
+  .hmenu svg{width:20px;height:20px;flex:none}
+  .hmenu .seen,.hmenu .on{color:var(--accent2)}
+  .swipe{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:22px;font-size:11px;font-weight:600;color:var(--muted)}
+  .sdots{display:flex;gap:6px}.sdots i{width:5px;height:5px;border-radius:5px;background:rgba(255,255,255,.3);transition:width .3s}
+  .sdots i.on{width:18px;background:#fff}
+  .hero-content{transition:opacity .18s,transform .18s}
+  .out-l{opacity:0;transform:translateX(-40px)}.out-r{opacity:0;transform:translateX(40px)}
+}
+@media (max-width:440px){.hero .mdur,.hero .meta .sep{display:none}}
 /* ---------- Drawer ---------- */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s}
 .scrim.on{opacity:1;pointer-events:auto}
@@ -742,6 +769,8 @@ const isTitle = r => r.media_type === 'movie' || r.media_type === 'tv';
 
 /* ================= Ícones ================= */
 const I = {
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  dots:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
   seen:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/></svg>',
   thumbs2:'<svg viewBox="0 0 30 24"><g fill="currentColor"><path opacity=".55" transform="translate(7 -1)" d="M7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/><path d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></g></svg>',
   thumb:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></svg>',
@@ -950,7 +979,8 @@ function pick(pool){
     const m = fav.filter(g => matchGenre(x, g)), t = taste(x);
     return { x, m, like: t >= .8, k: val(x) + m.length * 1.3 + t + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
   }).sort((a, b) => b.k - a.k).slice(0, 6);
-  return ranked[state.shuffle % ranked.length];
+  const i = ((state.shuffle % ranked.length) + ranked.length) % ranked.length;
+  return { ...ranked[i], i, n: ranked.length };
 }
 
 const isSaved = id => state.saved.includes(id);
@@ -970,7 +1000,7 @@ function heroSkeleton(){
     <div class="sk-line skel" style="width:82%;height:52px;margin-top:18px;border-radius:14px"></div>${skLines(60, 45)}
     <div class="actions"><div class="btn skel" style="flex:1"></div></div></div>`;
 }
-function renderHero(x, m, like){
+function renderHero(x, m, like, i = 0, n = 1){
   state.heroId = x.id;
   const fav = state.profile.genres, P = PLATFORMS[x.p];
   const reason = like ? 'Parecido com títulos que você curtiu' : m.length ? `Combina com seu gosto por ${m.join(' e ')}`
@@ -979,8 +1009,16 @@ function renderHero(x, m, like){
   $('#hero').innerHTML = art(x, 'hero', 'hero-bg', `<div class="big">${esc(x.t)}</div>`) + `<div class="veil"></div>
     <div class="hero-content swap">
       <span class="eyebrow glass"><span class="dot"></span>Recomendação de hoje · ${dateShort}</span>
+      <span class="kick">Hoje pra você</span>
       <h1>${esc(x.t)}</h1>
-      <div class="meta">${pfBadge(x)}${imdbBadge(x)}<span>${esc(x.y)}</span>${x.dur ? `<span class="sep">•</span><span>${esc(x.dur)}</span>` : ''}</div>
+      <div class="mrow"><div class="meta">${pfBadge(x)}${imdbBadge(x)}<span>${esc(x.y)}</span>${x.dur ? `<span class="sep">•</span><span class="mdur">${esc(x.dur)}</span>` : ''}</div>
+        <button class="more glass" data-more aria-label="Mais opções" aria-expanded="false"><span class="o">${I.dots}</span><span class="c">${I.x}</span></button>
+        <div class="hmenu glass" role="menu">
+          <button role="menuitem" class="${isWatched(x.id) ? 'seen' : ''}" data-watched="${x.id}">${I.seen}Já assisti</button>
+          <button role="menuitem" class="${isSaved(x.id) ? 'on' : ''}" data-save="${x.id}">${I.bookmark}Assistir depois</button>
+          <button role="menuitem" data-share="${x.id}">${I.share}Compartilhar</button>
+        </div>
+      </div>
       <div class="chips">${chips(x.g)}</div>
       <p class="reason">${I.spark}${esc(reason)}</p>
       <div class="actions">
@@ -990,6 +1028,7 @@ function renderHero(x, m, like){
         <button class="round glass" data-share="${x.id}" aria-label="Compartilhar">${I.share}</button>
         <button class="round glass" data-reroll aria-label="Outra sugestão">${I.shuffle}</button>
       </div>
+      ${n > 1 ? `<div class="swipe"><div class="sdots">${Array.from({ length: n }, (_, k) => `<i${k === i ? ' class="on"' : ''}></i>`).join('')}</div>deslize para outra sugestão</div>` : ''}
     </div>
     <button class="scroll-hint" data-totops>Em alta hoje${I.down}</button>`;
 }
@@ -1043,7 +1082,7 @@ async function refresh(){
     try { await ensureDetails(sel.x); } catch {}
     if (my !== refreshTok) return;
   }
-  renderHero(sel.x, sel.m, sel.like);
+  renderHero(sel.x, sel.m, sel.like, sel.i, sel.n);
 }
 
 function renderDrawer(){
@@ -1437,6 +1476,10 @@ document.addEventListener('click', e => {
   if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
   if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
   if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
+  const hm = document.querySelector('.hero-content.menu-on');
+  if (hm && !t.closest('.hmenu')) { hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false'); if (t.closest('[data-more]')) return; }
+  if (t.closest('[data-more]')) { const c = t.closest('.hero-content'); c.classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); return; }
+  if (t.closest('.hmenu')) t.closest('.hero-content').classList.remove('menu-on');
   if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
   if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
   if ((el = t.closest('[data-nav]'))) return nav(el.dataset.nav);
@@ -1456,6 +1499,17 @@ document.addEventListener('keydown', e => {
 });
 // desktop: mouse saindo pelo topo da janela (indo fechar a aba) mostra o convite, uma vez por visita
 document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && performance.now() > 15000) inviteSignup(); });
+// celular: arrastar a recomendação para o lado mostra outra sugestão
+let sw = null;
+$('#hero').addEventListener('touchstart', e => { const p = e.touches[0]; sw = { x: p.clientX, y: p.clientY }; }, { passive: true });
+$('#hero').addEventListener('touchend', e => {
+  if (!sw || !state.heroId) return;
+  const p = e.changedTouches[0], dx = p.clientX - sw.x, dy = p.clientY - sw.y; sw = null;
+  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  state.shuffle += dx < 0 ? 1 : -1;
+  const c = $('#hero .hero-content'); c?.classList.add(dx < 0 ? 'out-l' : 'out-r');
+  setTimeout(refresh, 180);
+});
 $('#q').addEventListener('input', renderSearch);
 addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
 
