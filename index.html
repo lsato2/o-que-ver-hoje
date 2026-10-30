@@ -259,11 +259,49 @@ svg{display:block;flex:none}
 @keyframes shim{to{background-position:-200% 0}}
 .sk-line{height:14px;border-radius:8px;margin-top:10px}
 .imdb.tm b{background:#01b4e4;color:#fff}
+/* ---------- Já assisti / modal de vidro ---------- */
+.round.seen,.icon-btn.seen{color:#5df0a0;background:linear-gradient(135deg,rgba(61,220,132,.3),rgba(61,220,132,.1));border-color:rgba(93,240,160,.45)}
+.seenb{position:absolute;top:8px;left:8px;z-index:1;font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(10,10,15,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18)}
+.official{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;padding:5px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(229,9,20,.55),rgba(229,9,20,.25));border:1px solid rgba(255,255,255,.2)}
+.sim.trend{width:120px}
+.modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(5,5,10,.62);
+  backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);opacity:0;pointer-events:none;transition:opacity .3s}
+.modal.on{opacity:1;pointer-events:auto}
+.mcard{width:min(100%,400px);max-height:calc(100svh - 40px);overflow-y:auto;border-radius:30px;padding:26px 22px 18px;text-align:center;
+  background:linear-gradient(160deg,rgba(58,58,74,.7),rgba(22,22,30,.8));backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.1),0 30px 80px rgba(0,0,0,.55);
+  transform:scale(.88) translateY(24px);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.modal.on .mcard{transform:none}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.modal{background:rgba(5,5,10,.85)}.mcard{background:#22222c}}
+.mposter{width:92px;margin:0 auto 16px;border-radius:14px}
+.mposter .score,.mposter .seenb,.mposter .poster-t{display:none}
+.mcard h3{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+.mcard>p{color:#cfcfd9;font-size:14px;margin-top:6px;line-height:1.5}
+.rate{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.rate button{height:104px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s,background .25s,color .25s}
+.rate button svg{width:36px;height:36px;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.rate .down svg{transform:rotate(180deg)}
+.rate button:active{transform:scale(.95)}
+.rate .up:hover svg{transform:rotate(-12deg) scale(1.1)}
+.rate .down:hover svg{transform:rotate(168deg) scale(1.1)}
+.rate .up.on,.rate .up:hover{color:#5df0a0;background:linear-gradient(135deg,rgba(61,220,132,.32),rgba(61,220,132,.1));border-color:rgba(93,240,160,.5)}
+.rate .down.on,.rate .down:hover{color:#ff8a7a;background:linear-gradient(135deg,rgba(255,91,74,.32),rgba(255,91,74,.1));border-color:rgba(255,138,122,.5)}
+.mlink{margin-top:12px;font-size:13px;color:var(--muted);font-weight:600;padding:8px}
+.micon{width:58px;height:58px;margin:0 auto 14px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 30px rgba(255,91,74,.4)}
+.micon svg{width:24px;height:24px}
+.perks{list-style:none;text-align:left;margin:18px 0 6px;display:grid;gap:10px}
+.perks li{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;padding:11px 14px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}
+.perks svg{width:20px;height:20px;color:var(--accent2)}
+.mcard .field{margin-top:10px}
+.mcard .field input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);margin-top:0}
+.join{display:block;width:100%;text-align:left;margin:14px 0 0;padding:14px 16px;border-radius:18px}
+.join b{display:block;font-size:14px}
+.join small{color:var(--muted);font-size:12px}
 .toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);z-index:90;transform:translate(-50%,140%);opacity:0;padding:13px 18px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s}
 .toast.on{transform:translate(-50%,0);opacity:1}
 
-@media (max-width:400px){.hero .actions{gap:8px}.hero .round{width:50px;height:50px}.hero .btn-primary{padding:0 14px;white-space:nowrap}}
-@media (max-width:360px){.facts{grid-template-columns:1fr 1fr}.fact:last-child{grid-column:span 2}.hero .actions{gap:6px}.hero .round{width:46px;height:46px}.hero .btn-primary{padding:0 12px;font-size:14px}}
+@media (max-width:400px){.hero .actions{gap:8px}.hero .round{width:48px;height:48px}.hero .btn-primary{padding:0 14px;white-space:nowrap}.hero .vl{display:none}}
+@media (max-width:360px){.facts{grid-template-columns:1fr 1fr}.fact:last-child{grid-column:span 2}.hero .actions{gap:6px}.hero .round{width:42px;height:42px}.hero .btn-primary{padding:0 12px;font-size:14px}}
 @media (min-width:900px){
   .hero-content{padding:0 56px 104px}
   .tops-head,.row-head{padding:0 56px}
@@ -317,6 +355,12 @@ svg{display:block;flex:none}
   <div class="page-body" id="searchBody"></div>
 </section>
 
+<section class="page" id="page-history">
+  <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Já assisti</h2></div>
+  <div class="page-body" id="historyBody"></div>
+</section>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
 <div class="toast glass" id="toast" role="status"></div>
 
 <script>
@@ -664,6 +708,7 @@ const items = new Map(D.map(x => [x.id, x]));
 const state = {
   type: store.get('type','movie'),
   saved: store.get('saved',[]),
+  watched: store.get('watched',{}),  // { id: { r: 1 gostei | -1 não curti | 0 só visto, at } }
   savedItems: store.get('savedItems',{}),
   profile: Object.assign({name:'',email:'',birth:'',platforms:[],genres:[],tmdb:'',omdb:''}, store.get('profile',{})),
   imdbCache: store.get('imdb',{}),
@@ -684,6 +729,8 @@ const isTitle = r => r.media_type === 'movie' || r.media_type === 'tv';
 
 /* ================= Ícones ================= */
 const I = {
+  seen:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/></svg>',
+  thumb:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></svg>',
   bookmark:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>',
   shuffle:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
   search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
@@ -714,7 +761,7 @@ function art(x, kind, cls, inner = ''){
   const img = imgTag(x, kind);
   return `<div class="${cls} art${img ? ' has-img' : ''}" style="--h1:${h1};--h2:${h2}" data-art="${x.id}">${img}${inner}</div>`;
 }
-const poster = x => art(x, 'poster', 'poster', `<span class="score">${val(x) ? val(x).toFixed(1) : '—'}</span><div class="poster-t">${esc(x.t)}</div>`);
+const poster = x => art(x, 'poster', 'poster', `${isWatched(x.id) ? `<span class="seenb">${state.watched[x.id].r > 0 ? '👍' : state.watched[x.id].r < 0 ? '👎' : '✓'} Visto</span>` : ''}<span class="score">${val(x) ? val(x).toFixed(1) : '—'}</span><div class="poster-t">${esc(x.t)}</div>`);
 
 /* ================= API (TMDB + OMDb) ================= */
 // cache do dia: limpa entradas de dias anteriores
@@ -868,11 +915,23 @@ async function getData(type){
 }
 
 /* ================= Recomendação do dia ================= */
+const isWatched = id => !!state.watched[id];
+// gosto aprendido: gêneros em comum com o que a pessoa curtiu (+) ou não curtiu (−)
+function taste(x){
+  let t = 0;
+  for (const [id, w] of Object.entries(state.watched)) {
+    const y = w.r && getItem(id);
+    if (!y || y.id === x.id) continue;
+    t += w.r * (y.gids && x.gids ? y.gids.filter(g => x.gids.includes(g)).length : y.g.filter(g => x.g.includes(g)).length);
+  }
+  return Math.max(-3, Math.min(3, t * .4));
+}
 function pick(pool){
   const fav = state.profile.genres;
-  const ranked = pool.map(x => {
-    const m = fav.filter(g => matchGenre(x, g));
-    return { x, m, k: val(x) + m.length * 1.3 + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
+  const fresh = pool.filter(x => !isWatched(x.id));
+  const ranked = (fresh.length ? fresh : pool).map(x => {
+    const m = fav.filter(g => matchGenre(x, g)), t = taste(x);
+    return { x, m, like: t >= .8, k: val(x) + m.length * 1.3 + t + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
   }).sort((a, b) => b.k - a.k).slice(0, 6);
   return ranked[state.shuffle % ranked.length];
 }
@@ -893,10 +952,10 @@ function heroSkeleton(){
     <div class="sk-line skel" style="width:82%;height:52px;margin-top:18px;border-radius:14px"></div>${skLines(60, 45)}
     <div class="actions"><div class="btn skel" style="flex:1"></div></div></div>`;
 }
-function renderHero(x, m){
+function renderHero(x, m, like){
   state.heroId = x.id;
   const fav = state.profile.genres, P = PLATFORMS[x.p];
-  const reason = m.length ? `Combina com seu gosto por ${m.join(' e ')}`
+  const reason = like ? 'Parecido com títulos que você curtiu' : m.length ? `Combina com seu gosto por ${m.join(' e ')}`
     : fav.length ? `Bem avaliado e em alta ${P ? P.prep + ' ' + P.name : 'hoje'}`
     : `Escolha do dia · personalize no seu perfil`;
   $('#hero').innerHTML = art(x, 'hero', 'hero-bg', `<div class="big">${esc(x.t)}</div>`) + `<div class="veil"></div>
@@ -907,18 +966,21 @@ function renderHero(x, m){
       <div class="chips">${chips(x.g)}</div>
       <p class="reason">${I.spark}${esc(reason)}</p>
       <div class="actions">
-        <button class="btn btn-primary" data-open="${x.id}">Ver detalhes</button>
+        <button class="btn btn-primary" data-open="${x.id}"><span class="vl">Ver&nbsp;</span>detalhes</button>
+        <button class="round glass${isWatched(x.id) ? ' seen' : ''}" data-watched="${x.id}" aria-label="Já assisti">${I.seen}</button>
         <button class="round glass${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
         <button class="round glass" data-share="${x.id}" aria-label="Compartilhar">${I.share}</button>
         <button class="round glass" data-reroll aria-label="Outra sugestão">${I.shuffle}</button>
       </div>
     </div>
-    <button class="scroll-hint" data-totops>Top 10 de hoje${I.down}</button>`;
+    <button class="scroll-hint" data-totops>Em alta hoje${I.down}</button>`;
 }
 
 const topsHead = () => {
   const label = state.type === 'movie' ? 'filmes' : 'séries';
-  return `<div class="tops-head"><h2>Em alta hoje</h2><p>${realData() ? `Os ${label} mais populares hoje no Brasil` : `Top 10 de ${label} (exemplo)`} · ${updatedLabel()}</p></div>
+  const sub = state.daily?.netflixWeek ? `Top 10 oficial da Netflix e os ${label} em alta nas outras plataformas`
+    : realData() ? `Os ${label} em alta hoje no Brasil` : `Top 10 de ${label} (exemplo)`;
+  return `<div class="tops-head"><h2>Em alta hoje</h2><p>${sub} · ${updatedLabel()}</p></div>
     <button class="searchbar" data-nav="search">${I.search}Buscar filmes e séries…</button>`;
 };
 const updatedLabel = () => {
@@ -926,15 +988,26 @@ const updatedLabel = () => {
   const d = new Date(state.daily.updated);
   return 'atualizado ' + (d.toDateString() === NOW.toDateString() ? 'hoje às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'em ' + d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }));
 };
-const rowHead = P => `<div class="row-head">${pfLogo(P, 154)}<div><h3>${P.name}</h3><small>${realData() ? 'Mais populares' : 'Top 10'} de ${state.type === 'movie' ? 'filmes' : 'séries'} hoje</small></div></div>`;
+// só a Netflix publica ranking oficial; as outras plataformas aparecem como "Em alta", sem numeração
+const isOfficial = p => p === 'netflix' && !!state.daily?.netflixWeek;
+const numbered = p => isOfficial(p) || !realData();
+const weekLabel = () => new Date(state.daily.netflixWeek + 'T12:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
+const rowHead = (P, p) => {
+  const label = state.type === 'movie' ? 'filmes' : 'séries';
+  const sub = isOfficial(p) ? `Top 10 oficial no Brasil · semana até ${weekLabel()}` : realData() ? `Em alta hoje · ${label}` : `Top 10 de ${label} hoje`;
+  return `<div class="row-head">${pfLogo(P, 154)}<div><h3>${P.name}</h3><small>${sub}</small></div>${isOfficial(p) ? '<span class="official">Oficial</span>' : ''}</div>`;
+};
+const railItem = (p, x, i) => numbered(p)
+  ? `<div class="rank" data-open="${x.id}"><span class="n">${i + 1}</span>${poster(x)}</div>`
+  : `<div class="sim trend" data-open="${x.id}">${poster(x)}<p>${esc(x.t)}</p></div>`;
 function topsSkeleton(){
-  $('#tops').innerHTML = topsHead() + Object.values(PLATFORMS).map(P => `<div class="row">${rowHead(P)}
+  $('#tops').innerHTML = topsHead() + Object.entries(PLATFORMS).map(([p, P]) => `<div class="row">${rowHead(P, p)}
     <div class="rail">${Array.from({ length: 4 }, (_, i) => `<div class="rank"><span class="n">${i + 1}</span><div class="poster skel"></div></div>`).join('')}</div></div>`).join('');
 }
 function renderTops(data){
   $('#tops').innerHTML = topsHead() + Object.entries(PLATFORMS).filter(([p]) => data.tops[p]?.length).map(([p, P]) => `
-    <div class="row">${rowHead(P)}
-      <div class="rail">${data.tops[p].map((x, i) => `<div class="rank" data-open="${x.id}"><span class="n">${i + 1}</span>${poster(x)}</div>`).join('')}</div>
+    <div class="row">${rowHead(P, p)}
+      <div class="rail">${data.tops[p].map((x, i) => railItem(p, x, i)).join('')}</div>
     </div>`).join('');
 }
 
@@ -952,7 +1025,7 @@ async function refresh(){
     try { await ensureDetails(sel.x); } catch {}
     if (my !== refreshTok) return;
   }
-  renderHero(sel.x, sel.m);
+  renderHero(sel.x, sel.m, sel.like);
 }
 
 function renderDrawer(){
@@ -967,8 +1040,10 @@ function renderDrawer(){
       <button data-nav="home">${I.home}Início</button>
       <button data-nav="search">${I.search.replace(/18/g,'20')}Pesquisar</button>
       <button data-nav="saved">${I.bookmark.replace(/22/g,'20')}Assistir depois${state.saved.length ? `<span class="badge">${state.saved.length}</span>` : ''}</button>
+      <button data-nav="history">${I.seen.replace(/22/g,'20')}Já assisti${Object.keys(state.watched).length ? `<span class="badge">${Object.keys(state.watched).length}</span>` : ''}</button>
       <button data-nav="profile">${I.user}Meu perfil</button>
     </nav>
+    ${pr.registered ? '' : `<button class="join glass" data-join><b>Crie seu perfil grátis</b><small>Guarde seu histórico e sua lista</small></button>`}
     <div class="drawer-foot">
       ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
       ${state.daily ? `Dados reais · ${updatedLabel()}<br>` : state.live ? '' : 'Modo demonstração · dados de exemplo<br>'}
@@ -1010,6 +1085,7 @@ function renderDetail(x){
       <div class="d-sec"><h4>Sinopse</h4><p class="syn">${esc(x.s)}</p></div>
       <div class="actions">
         <a class="btn btn-primary" href="${watch}" target="_blank" rel="noopener">${I.play}${P ? `Assistir ${P.prep} ${P.name}` : 'Ver onde assistir'}</a>
+        <button class="round glass${isWatched(x.id) ? ' seen' : ''}" data-watched="${x.id}" aria-label="Já assisti">${I.seen}</button>
         <button class="round glass${sv ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
       </div>
       ${similar.length ? `<div class="d-sec"><h4>Você também pode curtir</h4></div>` : ''}
@@ -1036,6 +1112,15 @@ function renderSaved(){
     ? `<p class="sec-p" style="margin:0 0 16px">${list.length} ${list.length > 1 ? 'títulos salvos' : 'título salvo'} para assistir depois</p>
        <div class="grid">${list.map(x => `<div class="gitem" data-open="${x.id}">${poster(x)}<p>${esc(x.t)}</p></div>`).join('')}</div>`
     : `<div class="empty"><div class="ic">${I.bookmark}</div><b>Sua lista está vazia</b>Toque no marcador em qualquer filme ou série para salvar e assistir depois.<br><button class="btn btn-primary" data-nav="search">Buscar títulos</button></div>`;
+}
+
+function renderHistory(){
+  const list = Object.entries(state.watched).sort((a, b) => b[1].at - a[1].at).map(([id, w]) => [getItem(id), w]).filter(([x]) => x);
+  const likes = list.filter(([, w]) => w.r > 0).length, dislikes = list.filter(([, w]) => w.r < 0).length;
+  $('#historyBody').innerHTML = list.length
+    ? `<div class="stats" style="margin:0 0 20px"><div><b>${list.length}</b><small>Assistidos</small></div><div><b>${likes}</b><small>👍 Gostei</small></div><div><b>${dislikes}</b><small>👎 Não curti</small></div></div>
+       <div class="grid">${list.map(([x]) => `<div class="gitem" data-open="${x.id}">${poster(x)}<p>${esc(x.t)}</p></div>`).join('')}</div>`
+    : `<div class="empty"><div class="ic">${I.seen}</div><b>Nada por aqui ainda</b>Toque em “Já assisti” num filme ou série e diga se gostou. Assim a gente acerta cada vez mais nas recomendações.</div>`;
 }
 
 function renderProfile(){
@@ -1158,6 +1243,7 @@ function nav(where){
   state.layers.filter(l => l.classList.contains('page') && l !== page).forEach(l => closeLayer(l));
   if (where === 'profile') renderProfile();
   if (where === 'saved') renderSaved();
+  if (where === 'history') renderHistory();
   if (where === 'search') { renderSearch(); setTimeout(() => $('#q').focus(), 350); }
   page.scrollTop = 0;
   openLayer(page);
@@ -1182,6 +1268,95 @@ function openShared(){
   const id = new URLSearchParams(location.search).get('t');
   if (id && getItem(id)) openDetail(id);
 }
+/* ---------- Modal de vidro ---------- */
+function openModal(html){
+  const m = $('#modal');
+  m.innerHTML = `<div class="mcard glass">${html}</div>`;
+  m.classList.add('on');
+  document.body.classList.add('lock');
+}
+function closeModal(){
+  $('#modal').classList.remove('on');
+  if (!state.layers.length) document.body.classList.remove('lock');
+}
+const modalOpen = () => $('#modal').classList.contains('on');
+
+/* ---------- Já assisti ---------- */
+function askWatched(id){
+  const x = getItem(id), w = state.watched[id];
+  openModal(`${art(x, 'poster', 'poster mposter')}
+    <h3>E aí, você gostou?</h3>
+    <p>${esc(x.t)}</p>
+    <div class="rate">
+      <button class="glass up${w?.r === 1 ? ' on' : ''}" data-rate="1" data-id="${id}">${I.thumb}Gostei</button>
+      <button class="glass down${w?.r === -1 ? ' on' : ''}" data-rate="-1" data-id="${id}">${I.thumb}Não curti</button>
+    </div>
+    ${w ? `<button class="mlink" data-unwatch="${id}">Remover do histórico</button>` : `<button class="mlink" data-rate="0" data-id="${id}">Pular, só marcar como visto</button>`}`);
+}
+function syncTitle(id){
+  document.querySelectorAll(`[data-watched="${id}"]`).forEach(b => b.classList.toggle('seen', isWatched(id)));
+  document.querySelectorAll(`[data-save="${id}"]`).forEach(b => b.classList.toggle('on', isSaved(id)));
+  renderDrawer();
+  if ($('#page-history').classList.contains('on')) renderHistory();
+  if ($('#page-saved').classList.contains('on')) renderSaved();
+}
+function rate(id, r){
+  const x = getItem(id);
+  state.watched[id] = { r, at: Date.now() };
+  // já viu: sai da lista "assistir depois"
+  if (isSaved(id)) { state.saved = state.saved.filter(s => s !== id); store.set('saved', state.saved); }
+  if (x?.live) { state.savedItems[id] = { ...x, recs: undefined }; store.set('savedItems', state.savedItems); }
+  store.set('watched', state.watched);
+  closeModal();
+  syncTitle(id);
+  toast(r > 0 ? 'Anotado! Vamos recomendar mais títulos assim' : r < 0 ? 'Entendido, vamos evitar títulos parecidos' : 'Marcado como visto');
+  // a recomendação do dia troca por outra que a pessoa ainda não viu
+  if (id === state.heroId) { state.shuffle = 0; setTimeout(refresh, 450); }
+  maybeInvite();
+}
+function unwatch(id){
+  delete state.watched[id];
+  store.set('watched', state.watched);
+  closeModal();
+  syncTitle(id);
+  toast('Removido do histórico');
+}
+
+/* ---------- Convite para criar perfil ---------- */
+let invited = false;
+try { invited = !!sessionStorage.getItem('oqvh_invite'); } catch {}
+function inviteSignup(force){
+  if (!force && (invited || state.profile.registered || modalOpen())) return;
+  invited = true;
+  try { sessionStorage.setItem('oqvh_invite', '1'); } catch {}
+  openModal(`<div class="micon">${I.play}</div>
+    <h3>Antes de ir, salve sua jornada 🍿</h3>
+    <p>Crie seu perfil grátis em segundos e tenha sempre à mão o que você já assistiu e tudo o que quer ver.</p>
+    <ul class="perks">
+      <li>${I.seen}Histórico do que você já viu</li>
+      <li>${I.bookmark}Sua biblioteca para assistir depois</li>
+      <li>${I.spark}Recomendações que aprendem com o seu gosto</li>
+    </ul>
+    <div class="field"><input id="su-name" placeholder="Seu nome" autocomplete="name" value="${esc(state.profile.name)}"></div>
+    <div class="field"><input id="su-email" type="email" placeholder="Seu e-mail" autocomplete="email" value="${esc(state.profile.email)}"></div>
+    <button class="btn btn-primary" data-signup style="width:100%;margin-top:16px">Criar meu perfil grátis</button>
+    <button class="mlink" data-closemodal>Agora não</button>`);
+}
+// celular: depois de marcar ou salvar 2 títulos
+function maybeInvite(){
+  if (Object.keys(state.watched).length + state.saved.length >= 2) setTimeout(() => inviteSignup(), 1200);
+}
+function signup(){
+  const name = $('#su-name').value.trim(), email = $('#su-email').value.trim();
+  if (!name) return $('#su-name').focus();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Confira o seu e-mail'); return $('#su-email').focus(); }
+  state.profile = { ...state.profile, name, email, registered: true };
+  store.set('profile', state.profile);
+  closeModal();
+  renderDrawer();
+  toast(`Pronto, ${name.split(' ')[0]}! Seu perfil está criado`);
+}
+
 function toggleSave(id){
   const was = isSaved(id), x = getItem(id);
   state.saved = was ? state.saved.filter(s => s !== id) : [id, ...state.saved];
@@ -1191,6 +1366,7 @@ function toggleSave(id){
   store.set('savedItems', state.savedItems);
   document.querySelectorAll(`[data-save="${id}"]`).forEach(b => b.classList.toggle('on', !was));
   toast(was ? 'Removido da sua lista' : 'Salvo para assistir depois');
+  if (!was) maybeInvite();
   renderDrawer();
   if ($('#page-saved').classList.contains('on')) renderSaved();
 }
@@ -1228,6 +1404,13 @@ document.addEventListener('click', e => {
   const t = e.target;
   let el;
   if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
+  if (modalOpen() && t.id === 'modal') return closeModal();
+  if ((el = t.closest('[data-rate]'))) return rate(el.dataset.id, +el.dataset.rate);
+  if ((el = t.closest('[data-unwatch]'))) return unwatch(el.dataset.unwatch);
+  if (t.closest('[data-signup]')) return signup();
+  if (t.closest('[data-closemodal]')) return closeModal();
+  if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
+  if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
   if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
   if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
   if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
@@ -1242,7 +1425,12 @@ document.addEventListener('click', e => {
   if (t.closest('#scrim')) return closeLayer($('#drawer'));
   if (t.closest('.hero') && !t.closest('.hero-content') && state.heroId) return openDetail(state.heroId);
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLayer(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') return modalOpen() ? closeModal() : closeLayer();
+  if (e.key === 'Enter' && modalOpen() && $('#su-email')) signup();
+});
+// desktop: mouse saindo pelo topo da janela (indo fechar a aba) mostra o convite, uma vez por visita
+document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && performance.now() > 15000) inviteSignup(); });
 $('#q').addEventListener('input', renderSearch);
 addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
 

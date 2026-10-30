@@ -64,6 +64,49 @@ for (const type of ['movie', 'tv']) for (const [pf, ids] of Object.entries(PLATF
     for (const r of results) if (!seen.has(key(type, r.id))) seen.set(key(type, r.id), { type, tid: r.id, from: pf, pop: r.popularity });
   }
 }
+
+// 1b) Top 10 OFICIAL da Netflix no Brasil (semanal, publicado pela Netflix em top10.netflix.com)
+//     As outras plataformas não publicam ranking: no site elas aparecem como "Em alta", sem numeração.
+const ascii = t => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+async function findOnNetflix(type, title, fresh, week){
+  const res = (await tmdb(`/search/${type}`, { query: title, language: 'en-US' })).results || [];
+  const exact = res.filter(r => [r.title, r.name, r.original_title, r.original_name].some(t => ascii(t) === ascii(title)));
+  let pool = exact.length ? exact : res;
+  // temporada 1 / minissérie / filme novo no ranking: prefere títulos lançados nos últimos 2 anos
+  if (fresh) {
+    const recent = pool.filter(r => +(r.release_date || r.first_air_date || '0').slice(0, 4) >= +week.slice(0, 4) - 2);
+    if (recent.length) pool = recent;
+  }
+  const cands = pool.sort((a, b) => b.popularity - a.popularity).slice(0, 3);
+  // entre homônimos, prefere o que está na Netflix Brasil
+  for (const c of cands) {
+    const pv = await tmdb(`/${type}/${c.id}/watch/providers`);
+    if ((pv.results?.BR?.flatrate || []).some(v => PROVIDER_MAP[v.provider_id] === 'netflix')) return c;
+  }
+  return cands[0];
+}
+let netflixWeek = null;
+try {
+  const tsv = await (await fetch('https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv')).text();
+  const rows = tsv.split('\n').map(l => l.split('\t')).filter(r => r[1] === 'BR');
+  const week = rows.reduce((m, r) => r[2] > m ? r[2] : m, '');
+  for (const [cat, type] of [['Films', 'movie'], ['TV', 'tv']]) {
+    const list = rows.filter(r => r[2] === week && r[3] === cat).sort((a, b) => a[4] - b[4]);
+    const ids = [];
+    for (const r of list) {
+      const fresh = type === 'tv' && /Season 1$|Limited Series|^N\/A$/.test(r[6]) && +r[7] <= 2;
+      const hit = await findOnNetflix(type, r[5], fresh, week);
+      if (!hit) { console.log(`Netflix oficial: não achei "${r[5]}" no TMDB`); continue; }
+      const k = key(type, hit.id);
+      if (!ids.includes(k)) ids.push(k); // temporadas diferentes da mesma série contam uma vez
+      if (!seen.has(k)) seen.set(k, { type, tid: hit.id, from: 'netflix', pop: hit.popularity });
+      else seen.get(k).from = 'netflix';
+    }
+    if (ids.length >= 5) tops[type].netflix = ids;
+  }
+  netflixWeek = week;
+  console.log(`Top 10 oficial Netflix Brasil: semana até ${week}`);
+} catch (e) { console.log('Top 10 oficial da Netflix indisponível, usando popularidade:', e.message); }
 console.log(`${seen.size} títulos únicos`);
 
 // 2) Detalhes: duração/temporadas, onde assistir, id IMDb
@@ -110,6 +153,6 @@ for (const x of items) {
 }
 
 items.sort((a, b) => b.pop - a.pop);
-fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), tops, items }));
+fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), netflixWeek, tops, items }));
 console.log(`sinopses: ${stats.br} pt-BR, ${stats.pt} pt-PT, ${stats.gen} sem sinopse em português`);
 console.log(`data.json: ${items.length} títulos, ${items.filter(x => x.ir).length} com nota IMDb, ${(fs.statSync('data.json').size / 1024).toFixed(0)} KB`);
