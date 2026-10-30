@@ -280,12 +280,15 @@ svg{display:block;flex:none}
 .mposter .score,.mposter .seenb,.mposter .poster-t{display:none}
 .mcard h3{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
 .mcard>p{color:#cfcfd9;font-size:14px;margin-top:6px;line-height:1.5}
-.rate{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
-.rate button{height:104px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s,background .25s,color .25s}
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+.rate button{height:104px;padding:0 6px;border-radius:24px;line-height:1.2;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s,background .25s,color .25s}
 .rate button svg{width:36px;height:36px;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .rate .down svg{transform:rotate(180deg)}
 .rate button:active{transform:scale(.95)}
-.rate .up:hover svg{transform:rotate(-12deg) scale(1.1)}
+.rate .up:hover svg,.rate .love:hover svg{transform:rotate(-12deg) scale(1.1)}
+.rate .love svg{width:44px}
+.rate .love.on,.rate .love:hover{color:#ffd166;background:linear-gradient(135deg,rgba(255,196,61,.34),rgba(255,138,61,.12));border-color:rgba(255,209,102,.55)}
+@media (max-width:360px){.rate button{height:96px;font-size:13px}}
 .rate .down:hover svg{transform:rotate(168deg) scale(1.1)}
 .rate .up.on,.rate .up:hover{color:#5df0a0;background:linear-gradient(135deg,rgba(61,220,132,.32),rgba(61,220,132,.1));border-color:rgba(93,240,160,.5)}
 .rate .down.on,.rate .down:hover{color:#ff8a7a;background:linear-gradient(135deg,rgba(255,91,74,.32),rgba(255,91,74,.1));border-color:rgba(255,138,122,.5)}
@@ -718,7 +721,7 @@ const items = new Map(D.map(x => [x.id, x]));
 const state = {
   type: store.get('type','movie'),
   saved: store.get('saved',[]),
-  watched: store.get('watched',{}),  // { id: { r: 1 gostei | -1 não curti | 0 só visto, at } }
+  watched: store.get('watched',{}),  // { id: { r: 2 gostei muito | 1 gostei | -1 não gostei | 0 só visto, at } }
   savedItems: store.get('savedItems',{}),
   profile: Object.assign({name:'',email:'',birth:'',platforms:[],genres:[],tmdb:'',omdb:''}, store.get('profile',{})),
   imdbCache: store.get('imdb',{}),
@@ -740,6 +743,7 @@ const isTitle = r => r.media_type === 'movie' || r.media_type === 'tv';
 /* ================= Ícones ================= */
 const I = {
   seen:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/></svg>',
+  thumbs2:'<svg viewBox="0 0 30 24"><g fill="currentColor"><path opacity=".55" transform="translate(7 -1)" d="M7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/><path d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></g></svg>',
   thumb:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></svg>',
   bookmark:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>',
   shuffle:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
@@ -771,7 +775,7 @@ function art(x, kind, cls, inner = ''){
   const img = imgTag(x, kind);
   return `<div class="${cls} art${img ? ' has-img' : ''}" style="--h1:${h1};--h2:${h2}" data-art="${x.id}">${img}${inner}</div>`;
 }
-const poster = x => art(x, 'poster', 'poster', `${isWatched(x.id) ? `<span class="seenb">${state.watched[x.id].r > 0 ? '👍' : state.watched[x.id].r < 0 ? '👎' : '✓'} Visto</span>` : ''}<span class="score">${val(x) ? val(x).toFixed(1) : '—'}</span><div class="poster-t">${esc(x.t)}</div>`);
+const poster = x => art(x, 'poster', 'poster', `${isWatched(x.id) ? `<span class="seenb">${state.watched[x.id].r > 1 ? '👍👍' : state.watched[x.id].r > 0 ? '👍' : state.watched[x.id].r < 0 ? '👎' : '✓'} Visto</span>` : ''}<span class="score">${val(x) ? val(x).toFixed(1) : '—'}</span><div class="poster-t">${esc(x.t)}</div>`);
 
 /* ================= API (TMDB + OMDb) ================= */
 // cache do dia: limpa entradas de dias anteriores
@@ -1131,9 +1135,9 @@ function renderSaved(){
 
 function renderHistory(){
   const list = Object.entries(state.watched).sort((a, b) => b[1].at - a[1].at).map(([id, w]) => [getItem(id), w]).filter(([x]) => x);
-  const likes = list.filter(([, w]) => w.r > 0).length, dislikes = list.filter(([, w]) => w.r < 0).length;
+  const loves = list.filter(([, w]) => w.r > 1).length, likes = list.filter(([, w]) => w.r === 1).length, dislikes = list.filter(([, w]) => w.r < 0).length;
   $('#historyBody').innerHTML = list.length
-    ? `<div class="stats" style="margin:0 0 20px"><div><b>${list.length}</b><small>Assistidos</small></div><div><b>${likes}</b><small>👍 Gostei</small></div><div><b>${dislikes}</b><small>👎 Não curti</small></div></div>
+    ? `<div class="stats" style="margin:0 0 20px;grid-template-columns:repeat(4,1fr)"><div><b>${list.length}</b><small>Assistidos</small></div><div><b>${loves}</b><small>👍👍 Gostei muito</small></div><div><b>${likes}</b><small>👍 Gostei</small></div><div><b>${dislikes}</b><small>👎 Não gostei</small></div></div>
        <div class="grid">${list.map(([x]) => `<div class="gitem" data-open="${x.id}">${poster(x)}<p>${esc(x.t)}</p></div>`).join('')}</div>`
     : `<div class="empty"><div class="ic">${I.seen}</div><b>Nada por aqui ainda</b>Toque em “Já assisti” num filme ou série e diga se gostou. Assim a gente acerta cada vez mais nas recomendações.</div>`;
 }
@@ -1304,8 +1308,9 @@ function askWatched(id){
     <h3>E aí, você gostou?</h3>
     <p>${esc(x.t)}</p>
     <div class="rate">
+      <button class="glass down${w?.r === -1 ? ' on' : ''}" data-rate="-1" data-id="${id}">${I.thumb}Não gostei</button>
       <button class="glass up${w?.r === 1 ? ' on' : ''}" data-rate="1" data-id="${id}">${I.thumb}Gostei</button>
-      <button class="glass down${w?.r === -1 ? ' on' : ''}" data-rate="-1" data-id="${id}">${I.thumb}Não curti</button>
+      <button class="glass love${w?.r === 2 ? ' on' : ''}" data-rate="2" data-id="${id}">${I.thumbs2}Gostei muito</button>
     </div>
     ${w ? `<button class="mlink" data-unwatch="${id}">Remover do histórico</button>` : `<button class="mlink" data-rate="0" data-id="${id}">Pular, só marcar como visto</button>`}`);
 }
@@ -1325,7 +1330,7 @@ function rate(id, r){
   store.set('watched', state.watched);
   closeModal();
   syncTitle(id);
-  toast(r > 0 ? 'Anotado! Vamos recomendar mais títulos assim' : r < 0 ? 'Entendido, vamos evitar títulos parecidos' : 'Marcado como visto');
+  toast(r > 1 ? 'Que bom! Vamos priorizar títulos assim pra você' : r > 0 ? 'Anotado! Vamos recomendar mais títulos assim' : r < 0 ? 'Entendido, vamos evitar títulos parecidos' : 'Marcado como visto');
   // a recomendação do dia troca por outra que a pessoa ainda não viu
   if (id === state.heroId) { state.shuffle = 0; setTimeout(refresh, 450); }
   maybeInvite();
