@@ -320,6 +320,7 @@ svg{display:block;flex:none}
   .topbar{padding-left:32px;padding-right:32px}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+.credits{margin:28px 0 8px;font-size:11px;line-height:1.5;color:var(--muted,#888);opacity:.6;text-align:center}
 </style>
 </head>
 <body>
@@ -1061,8 +1062,7 @@ function renderDrawer(){
       : `<button class="join glass" data-join><b>Crie seu perfil grátis</b><small>Guarde seu histórico e sua lista</small></button>`}
     <div class="drawer-foot">
       ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
-      ${state.daily ? `Dados reais · ${updatedLabel()}<br>` : state.live ? '' : 'Modo demonstração · dados de exemplo<br>'}
-      Dados: TMDB · Onde assistir: JustWatch<br><span style="opacity:.7">Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</span>
+      ${state.daily || state.live ? '' : 'Modo demonstração · dados de exemplo'}
     </div>`;
 }
 
@@ -1168,7 +1168,8 @@ function renderProfile(){
     <div class="field"><label for="f-tmdb">Chave TMDB</label><input id="f-tmdb" value="${esc(pr.tmdb)}" placeholder="${CONFIG.TMDB_KEY ? 'Já configurada no app' : 'api_key ou token de leitura'}" autocomplete="off" spellcheck="false"></div>
     <div class="field"><label for="f-omdb">Chave OMDb (nota IMDb)</label><input id="f-omdb" value="${esc(pr.omdb)}" placeholder="${CONFIG.OMDB_KEY ? 'Já configurada no app' : 'opcional'}" autocomplete="off" spellcheck="false"></div>`}
 
-    <div class="save-bar"><button class="btn btn-primary" data-saveprofile>Salvar perfil</button></div>`;
+    <div class="save-bar"><button class="btn btn-primary" data-saveprofile>Salvar perfil</button></div>
+    <p class="credits">Dados: TMDB · Onde assistir: JustWatch. Este produto usa a API do TMDB, mas não é endossado ou certificado pelo TMDB.</p>`;
 }
 
 /* ================= Pesquisa ================= */
