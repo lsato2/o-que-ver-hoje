@@ -34,9 +34,9 @@
   --ease:cubic-bezier(.2,.8,.2,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg);scroll-behavior:smooth}
+html{background:var(--bg);scroll-behavior:smooth;overflow-x:hidden;overscroll-behavior-x:none}
 body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body.lock{overflow:hidden}
+body.lock{overflow:hidden;position:fixed;left:0;right:0;width:100%}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 a{color:inherit;text-decoration:none}
 input{font:inherit;color:inherit}
@@ -94,7 +94,7 @@ svg{display:block;flex:none}
   text-transform:uppercase;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.16);overflow-wrap:anywhere}
 
 /* ---------- Hero ---------- */
-.hero{position:relative;height:100svh;min-height:620px;overflow:hidden;cursor:pointer}
+.hero{position:relative;height:100svh;min-height:620px;overflow:hidden;cursor:pointer;touch-action:pan-y}
 .hero-bg{position:absolute;inset:0;animation:kb 26s ease-in-out infinite alternate}
 @keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.14) translateY(-1.5%)}}
 .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
@@ -157,7 +157,7 @@ svg{display:block;flex:none}
 
 
 /* celular: recomendação limpa, ações no ⋯ e arrastar para trocar */
-.kick,.more,.hmenu,.swipe{display:none}
+.kick,.more,.hmenu{display:none}
 .mrow{position:relative;display:flex;align-items:center;gap:12px}
 @media (max-width:899px){
   .hero .eyebrow,.hero .chips,.hero .reason,.hero .actions{display:none}
@@ -175,21 +175,18 @@ svg{display:block;flex:none}
   .hmenu button:active{background:rgba(255,255,255,.1)}
   .hmenu svg{width:20px;height:20px;flex:none}
   .hmenu .seen,.hmenu .on{color:var(--accent2)}
-  .swipe{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:22px;font-size:11px;font-weight:600;color:var(--muted)}
-  .sdots{display:flex;gap:6px}.sdots i{width:5px;height:5px;border-radius:5px;background:rgba(255,255,255,.3);transition:width .3s}
-  .sdots i.on{width:18px;background:#fff}
-  .hero-content{transition:opacity .18s,transform .18s}
-  .out-l{opacity:0;transform:translateX(-40px)}.out-r{opacity:0;transform:translateX(40px)}
 }
 @media (max-width:440px){.hero .mdur,.hero .meta .sep{display:none}}
 /* ---------- Drawer ---------- */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s}
 .scrim.on{opacity:1;pointer-events:auto}
+.scrim,.modal{touch-action:none}
 .drawer{position:fixed;top:0;bottom:0;left:0;z-index:50;width:min(84vw,330px);display:flex;flex-direction:column;
   padding:calc(var(--safe-t) + 20px) 16px calc(var(--safe-b) + 20px);border-radius:0 28px 28px 0;
   background:rgba(20,20,28,.74);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);
-  border-right:1px solid rgba(255,255,255,.1);transform:translateX(-105%);transition:transform .45s var(--ease)}
-.drawer.on{transform:none}
+  border-right:1px solid rgba(255,255,255,.1);transform:translateX(-105%);visibility:hidden;transition:transform .45s var(--ease),visibility 0s .45s;
+  overflow-y:auto;overscroll-behavior:contain}
+.drawer.on{transform:none;visibility:visible;transition-delay:0s}
 .brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px;font-weight:800;font-size:18px;letter-spacing:-.02em}
 .brand i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));font-style:normal}
 .me{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:rgba(255,255,255,.06);margin-bottom:14px;text-align:left;width:100%}
@@ -206,9 +203,9 @@ svg{display:block;flex:none}
 
 /* ---------- Detail sheet ---------- */
 .sheet,.page{position:fixed;inset:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.sheet{z-index:60;transform:translateY(100%);transition:transform .55s var(--ease)}
-.page{z-index:55;transform:translateX(100%);transition:transform .45s var(--ease)}
-.sheet.on,.page.on{transform:none}
+.sheet{z-index:60;transform:translateY(100%);visibility:hidden;transition:transform .55s var(--ease),visibility 0s .55s}
+.page{z-index:55;transform:translateX(100%);visibility:hidden;transition:transform .45s var(--ease),visibility 0s .45s}
+.sheet.on,.page.on{transform:none;visibility:visible;transition-delay:0s}
 .d-hero{height:78svh;min-height:480px}
 .d-hero .veil{height:55%}
 .d-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,15,.5),transparent 20%,transparent 70%,var(--bg))}
@@ -754,7 +751,6 @@ const state = {
   imdbCache: store.get('imdb',{}),
   live: false,
   data: { movie:null, tv:null },
-  shuffle: 0,
   heroId: null,
   detailId: null,
   layers: []
@@ -775,7 +771,6 @@ const I = {
   thumbs2:'<svg viewBox="0 0 30 24"><g fill="currentColor"><path opacity=".55" transform="translate(7 -1)" d="M7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/><path d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></g></svg>',
   thumb:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M2 10.5h3.5V21H2zM7.5 21h9.3a2.2 2.2 0 0 0 2.15-1.75l1.5-7A2.2 2.2 0 0 0 18.3 9.6H14l.75-3.9a1.9 1.9 0 0 0-3.55-1.25L7.5 10.6z"/></svg>',
   bookmark:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>',
-  shuffle:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
   search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   down:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
   play:'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>',
@@ -978,9 +973,8 @@ function pick(pool){
   const ranked = (fresh.length ? fresh : pool).map(x => {
     const m = fav.filter(g => matchGenre(x, g)), t = taste(x);
     return { x, m, like: t >= .8, k: val(x) + m.length * 1.3 + t + rng(DAY + hash(x.id + 'pick'))() * 1.4 };
-  }).sort((a, b) => b.k - a.k).slice(0, 6);
-  const i = ((state.shuffle % ranked.length) + ranked.length) % ranked.length;
-  return { ...ranked[i], i, n: ranked.length };
+  }).sort((a, b) => b.k - a.k);
+  return ranked[0];
 }
 
 const isSaved = id => state.saved.includes(id);
@@ -1000,7 +994,7 @@ function heroSkeleton(){
     <div class="sk-line skel" style="width:82%;height:52px;margin-top:18px;border-radius:14px"></div>${skLines(60, 45)}
     <div class="actions"><div class="btn skel" style="flex:1"></div></div></div>`;
 }
-function renderHero(x, m, like, i = 0, n = 1){
+function renderHero(x, m, like){
   state.heroId = x.id;
   const fav = state.profile.genres, P = PLATFORMS[x.p];
   const reason = like ? 'Parecido com títulos que você curtiu' : m.length ? `Combina com seu gosto por ${m.join(' e ')}`
@@ -1026,9 +1020,7 @@ function renderHero(x, m, like, i = 0, n = 1){
         <button class="round glass${isWatched(x.id) ? ' seen' : ''}" data-watched="${x.id}" aria-label="Já assisti">${I.seen}</button>
         <button class="round glass${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
         <button class="round glass" data-share="${x.id}" aria-label="Compartilhar">${I.share}</button>
-        <button class="round glass" data-reroll aria-label="Outra sugestão">${I.shuffle}</button>
       </div>
-      ${n > 1 ? `<div class="swipe"><div class="sdots">${Array.from({ length: n }, (_, k) => `<i${k === i ? ' class="on"' : ''}></i>`).join('')}</div>deslize para outra sugestão</div>` : ''}
     </div>
     <button class="scroll-hint" data-totops>Em alta hoje${I.down}</button>`;
 }
@@ -1082,7 +1074,7 @@ async function refresh(){
     try { await ensureDetails(sel.x); } catch {}
     if (my !== refreshTok) return;
   }
-  renderHero(sel.x, sel.m, sel.like, sel.i, sel.n);
+  renderHero(sel.x, sel.m, sel.like);
 }
 
 function renderDrawer(){
@@ -1282,18 +1274,30 @@ async function searchGenre(g){
 }
 
 /* ================= Camadas (drawer, páginas, detalhe) ================= */
+let lockY = 0;
+function lockPage(){
+  const b = document.body;
+  if (b.classList.contains('lock')) return;
+  lockY = scrollY; b.style.top = `-${lockY}px`; b.classList.add('lock');
+}
+function unlockPage(){
+  const b = document.body;
+  if (!b.classList.contains('lock') || state.layers.length || modalOpen() || $('.hero-content.menu-on')) return;
+  b.classList.remove('lock'); b.style.top = '';
+  document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, lockY); document.documentElement.style.scrollBehavior = '';
+}
 function openLayer(el){
   if (!state.layers.includes(el)) state.layers.push(el);
   el.classList.add('on');
   if (el.id === 'drawer') $('#scrim').classList.add('on');
-  document.body.classList.add('lock');
+  lockPage();
 }
 function closeLayer(el = state.layers[state.layers.length - 1]){
   if (!el) return;
   el.classList.remove('on');
   state.layers = state.layers.filter(l => l !== el);
   if (el.id === 'drawer') $('#scrim').classList.remove('on');
-  if (!state.layers.length) document.body.classList.remove('lock');
+  unlockPage();
 }
 function nav(where){
   if (state.layers.includes($('#drawer'))) closeLayer($('#drawer'));
@@ -1332,11 +1336,11 @@ function openModal(html){
   const m = $('#modal');
   m.innerHTML = `<div class="mcard glass">${html}</div>`;
   m.classList.add('on');
-  document.body.classList.add('lock');
+  lockPage();
 }
 function closeModal(){
   $('#modal').classList.remove('on');
-  if (!state.layers.length) document.body.classList.remove('lock');
+  unlockPage();
 }
 const modalOpen = () => $('#modal').classList.contains('on');
 
@@ -1371,7 +1375,7 @@ function rate(id, r){
   syncTitle(id);
   toast(r > 1 ? 'Que bom! Vamos priorizar títulos assim pra você' : r > 0 ? 'Anotado! Vamos recomendar mais títulos assim' : r < 0 ? 'Entendido, vamos evitar títulos parecidos' : 'Marcado como visto');
   // a recomendação do dia troca por outra que a pessoa ainda não viu
-  if (id === state.heroId) { state.shuffle = 0; setTimeout(refresh, 450); }
+  if (id === state.heroId) { setTimeout(refresh, 450); }
   maybeInvite();
 }
 function unwatch(id){
@@ -1434,7 +1438,7 @@ function toggleSave(id){
 }
 function setType(type){
   if (type === state.type) return;
-  state.type = type; state.shuffle = 0; store.set('type', type);
+  state.type = type; store.set('type', type);
   syncSeg();
   const th = $('#thumb'); th.classList.remove('goo'); void th.offsetWidth; th.classList.add('goo');
   refresh();
@@ -1455,7 +1459,7 @@ function saveProfile(){
   store.set('profile', state.profile);
   state.live = !state.daily && !!tmdbKey();
   state.data = { movie: null, tv: null };
-  state.shuffle = 0;
+  
   renderDrawer();
   closeLayer($('#page-profile'));
   toast('Perfil salvo · recomendação atualizada');
@@ -1465,6 +1469,11 @@ function saveProfile(){
 document.addEventListener('click', e => {
   const t = e.target;
   let el;
+  // menu ⋯ da recomendação: tocar fora só fecha o menu
+  const hm = document.querySelector('.hero-content.menu-on');
+  if (hm && !t.closest('.hmenu')) { hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false'); unlockPage(); return; }
+  if (t.closest('[data-more]')) { t.closest('.hero-content').classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); lockPage(); return; }
+  if (t.closest('.hmenu')) { t.closest('.hero-content').classList.remove('menu-on'); unlockPage(); }
   if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
   if (modalOpen() && t.id === 'modal') return closeModal();
   if ((el = t.closest('[data-rate]'))) return rate(el.dataset.id, +el.dataset.rate);
@@ -1476,10 +1485,6 @@ document.addEventListener('click', e => {
   if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
   if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
   if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
-  const hm = document.querySelector('.hero-content.menu-on');
-  if (hm && !t.closest('.hmenu')) { hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false'); if (t.closest('[data-more]')) return; }
-  if (t.closest('[data-more]')) { const c = t.closest('.hero-content'); c.classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); return; }
-  if (t.closest('.hmenu')) t.closest('.hero-content').classList.remove('menu-on');
   if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
   if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
   if ((el = t.closest('[data-nav]'))) return nav(el.dataset.nav);
@@ -1487,7 +1492,6 @@ document.addEventListener('click', e => {
   if ((el = t.closest('[data-genre]'))) return searchGenre(el.dataset.genre);
   if (t.closest('[data-close]')) return closeLayer(t.closest('.sheet,.page'));
   if (t.closest('[data-saveprofile]')) return saveProfile();
-  if (t.closest('[data-reroll]')) { state.shuffle++; return refresh(); }
   if (t.closest('[data-totops]')) return $('#tops').scrollIntoView({ behavior: 'smooth' });
   if (t.closest('#menuBtn')) { renderDrawer(); return openLayer($('#drawer')); }
   if (t.closest('#scrim')) return closeLayer($('#drawer'));
@@ -1499,17 +1503,6 @@ document.addEventListener('keydown', e => {
 });
 // desktop: mouse saindo pelo topo da janela (indo fechar a aba) mostra o convite, uma vez por visita
 document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <= 0 && performance.now() > 15000) inviteSignup(); });
-// celular: arrastar a recomendação para o lado mostra outra sugestão
-let sw = null;
-$('#hero').addEventListener('touchstart', e => { const p = e.touches[0]; sw = { x: p.clientX, y: p.clientY }; }, { passive: true });
-$('#hero').addEventListener('touchend', e => {
-  if (!sw || !state.heroId) return;
-  const p = e.changedTouches[0], dx = p.clientX - sw.x, dy = p.clientY - sw.y; sw = null;
-  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-  state.shuffle += dx < 0 ? 1 : -1;
-  const c = $('#hero .hero-content'); c?.classList.add(dx < 0 ? 'out-l' : 'out-r');
-  setTimeout(refresh, 180);
-});
 $('#q').addEventListener('input', renderSearch);
 addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
 
@@ -1570,7 +1563,7 @@ async function pullAndMerge(user){
   syncing = false;
   await push();
   if (justSignedIn) { justSignedIn = false; toast(`Olá, ${(state.profile.name || 'você').split(' ')[0]}! Sua conta está conectada`); }
-  state.shuffle = 0;
+  
   refresh();
 }
 function scheduleSync(){
@@ -1611,7 +1604,7 @@ async function logout(){
   for (const k of SYNCED) store.set(k, state[k]);
   closeLayer();
   renderDrawer();
-  state.shuffle = 0;
+  
   refresh();
   toast('Você saiu da sua conta');
 }
