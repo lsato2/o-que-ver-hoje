@@ -728,7 +728,7 @@ const store = {
 };
 const fmtRuntime = m => m >= 60 ? `${Math.floor(m/60)}h${m % 60 ? ' ' + m % 60 + 'min' : ''}` : `${m}min`;
 
-const SYNCED = ['saved', 'savedItems', 'watched', 'profile', 'skipped', 'pick'];
+const SYNCED = ['saved', 'savedAt', 'savedItems', 'watched', 'profile', 'skipped', 'pick', 'removed'];
 const NOW = new Date();
 const DAY = NOW.getFullYear()*10000 + (NOW.getMonth()+1)*100 + NOW.getDate();
 const dateShort = NOW.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
@@ -751,6 +751,8 @@ const state = {
   imdbCache: store.get('imdb',{}),
   skipped: store.get('skipped',{}),  // { id: at } títulos marcados como "Não tenho interesse"
   pick: store.get('pick',{}),        // { day, movie: id, tv: id } a recomendação fixa do dia
+  savedAt: store.get('savedAt',{}),  // { id: at } quando entrou na lista "assistir depois"
+  removed: store.get('removed',{}),  // { 's:id' | 'w:id': at } remoções, para não voltarem ao juntar aparelhos
   live: false,
   data: { movie:null, tv:null },
   heroId: null,
@@ -1417,7 +1419,7 @@ function rate(id, r){
   const x = getItem(id);
   state.watched[id] = { r, at: Date.now() };
   // já viu: sai da lista "assistir depois"
-  if (isSaved(id)) { state.saved = state.saved.filter(s => s !== id); store.set('saved', state.saved); }
+  if (isSaved(id)) { state.saved = state.saved.filter(s => s !== id); state.removed['s:' + id] = Date.now(); store.set('removed', state.removed); store.set('saved', state.saved); }
   if (x?.live) { state.savedItems[id] = { ...x, recs: undefined }; store.set('savedItems', state.savedItems); }
   store.set('watched', state.watched);
   closeModal();
@@ -1435,6 +1437,7 @@ function skip(id){
 }
 function unwatch(id){
   delete state.watched[id];
+  state.removed['w:' + id] = Date.now(); store.set('removed', state.removed);
   store.set('watched', state.watched);
   closeModal();
   syncTitle(id);
@@ -1481,8 +1484,9 @@ function signup(){
 function toggleSave(id){
   const was = isSaved(id), x = getItem(id);
   state.saved = was ? state.saved.filter(s => s !== id) : [id, ...state.saved];
-  if (was) delete state.savedItems[id];
-  else if (x?.live) state.savedItems[id] = { ...x, recs: undefined };
+  if (was) { delete state.savedItems[id]; delete state.savedAt[id]; state.removed['s:' + id] = Date.now(); }
+  else { state.savedAt[id] = Date.now(); if (x?.live) state.savedItems[id] = { ...x, recs: undefined }; }
+  store.set('savedAt', state.savedAt); store.set('removed', state.removed);
   store.set('saved', state.saved);
   store.set('savedItems', state.savedItems);
   document.querySelectorAll(`[data-save="${id}"]`).forEach(b => b.classList.toggle('on', !was));
@@ -1539,6 +1543,8 @@ document.addEventListener('click', e => {
   if (t.closest('[data-signup]')) return signup();
   if (t.closest('[data-closemodal]')) return closeModal();
   if (t.closest('[data-login]')) return login();
+  if (t.closest('[data-copylink]')) return navigator.clipboard.writeText(location.origin + location.pathname)
+    .then(() => toast('Link copiado · cole no navegador'), () => toast('Não foi possível copiar o link'));
   if (t.closest('[data-logout]')) return logout();
   if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
   if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
@@ -1602,30 +1608,37 @@ async function initAccounts(){
   } catch (e) { console.warn('Contas indisponíveis:', e); fb = null; }
 }
 
-// junta o que está na conta com o que a pessoa fez neste aparelho antes de entrar
+// junta duas versões dos dados (este aparelho e a conta): vale o que foi feito por último em cada título,
+// inclusive remoções, que ficam anotadas por 90 dias para o item não "ressuscitar" vindo de outro aparelho
+function mergeData(a, b){
+  const removed = {}, old = Date.now() - 90 * 864e5;
+  for (const src of [a.removed, b.removed]) for (const [k, at] of Object.entries(src || {})) if (at > old && !(removed[k] >= at)) removed[k] = at;
+  const gone = (k, at) => removed[k] >= (at || 0);
+  const watched = {}, skipped = {}, savedAt = {};
+  for (const src of [b.watched, a.watched]) for (const [id, w] of Object.entries(src || {})) if (!watched[id] || w.at > watched[id].at) watched[id] = w;
+  for (const id in watched) if (gone('w:' + id, watched[id].at)) delete watched[id];
+  for (const src of [b.skipped, a.skipped]) for (const [id, at] of Object.entries(src || {})) skipped[id] = Math.max(skipped[id] || 0, at);
+  for (const src of [b, a]) for (const id of src.saved || []) savedAt[id] = Math.max(savedAt[id] || 0, src.savedAt?.[id] || 0);
+  const saved = Object.keys(savedAt).filter(id => !watched[id] && !gone('s:' + id, savedAt[id])).sort((x, y) => savedAt[y] - savedAt[x]);
+  return { watched, skipped, saved, removed, savedAt: Object.fromEntries(saved.map(id => [id, savedAt[id]])),
+    savedItems: { ...(b.savedItems || {}), ...(a.savedItems || {}) } };
+}
+
+// ao abrir o site logado: perfil e recomendação do dia vêm da conta; histórico e lista são juntados no push()
 async function pullAndMerge(user){
-  syncing = true;
   try {
     const snap = await fb.F.getDoc(userDoc());
     const r = snap.exists() ? snap.data() : {};
-    const watched = { ...(r.watched || {}) };
-    for (const [id, w] of Object.entries(state.watched)) if (!watched[id] || w.at > watched[id].at) watched[id] = w;
     const rp = r.profile || {}, lp = state.profile;
-    state.watched = watched;
-    state.saved = [...new Set([...state.saved, ...(r.saved || [])])].filter(id => !watched[id]);
-    state.savedItems = { ...(r.savedItems || {}), ...state.savedItems };
-    state.skipped = { ...(r.skipped || {}), ...state.skipped };
     // a recomendação de hoje já escolhida na conta vale para todos os aparelhos
     if (r.pick?.day === DAY) state.pick = { ...(state.pick.day === DAY ? state.pick : {}), ...r.pick };
     state.profile = { ...lp, ...rp, tmdb: lp.tmdb, omdb: lp.omdb,
       name: rp.name || lp.name || user.displayName || '', email: user.email || rp.email || '',
       genres: rp.genres?.length ? rp.genres : lp.genres, platforms: rp.platforms?.length ? rp.platforms : lp.platforms, registered: true };
-    for (const k of SYNCED) store.set(k, state[k === 'profile' ? 'profile' : k]);
+    syncing = true; store.set('profile', state.profile); store.set('pick', state.pick); syncing = false;
   } catch (e) { console.warn('Falha ao carregar a conta:', e); }
-  syncing = false;
   await push();
   if (justSignedIn) { justSignedIn = false; toast(`Olá, ${(state.profile.name || 'você').split(' ')[0]}! Sua conta está conectada`); }
-  
   refresh();
 }
 function scheduleSync(){
@@ -1633,19 +1646,58 @@ function scheduleSync(){
   clearTimeout(syncTimer);
   syncTimer = setTimeout(push, 800);
 }
+// lê a conta, junta com este aparelho e grava, tudo de uma vez: um aparelho aberto há horas
+// não apaga mais o que foi feito em outro
+let lastSync = 0;
 async function push(){
   if (!fb || !state.user) return;
   const { tmdb, omdb, ...profile } = state.profile;
-  const savedItems = {};
-  for (const id of [...state.saved, ...Object.keys(state.watched)]) {
-    const x = state.savedItems[id] || (items.get(id)?.live ? items.get(id) : null);
-    if (x) savedItems[id] = slim(x);
-  }
-  try { await fb.F.setDoc(userDoc(), JSON.parse(JSON.stringify({ profile, saved: state.saved, watched: state.watched, skipped: state.skipped, pick: state.pick, savedItems, updatedAt: Date.now() }))); }
-  catch (e) { console.warn('Falha ao sincronizar:', e); }
+  const before = JSON.stringify([state.saved, state.watched, state.skipped]);
+  try {
+    await fb.F.runTransaction(fb.db, async tx => {
+      const snap = await tx.get(userDoc());
+      const m = mergeData(state, snap.exists() ? snap.data() : {});
+      Object.assign(state, m);
+      const savedItems = {};
+      for (const id of [...m.saved, ...Object.keys(m.watched)]) {
+        const x = m.savedItems[id] || (items.get(id)?.live ? items.get(id) : null);
+        if (x) savedItems[id] = slim(x);
+      }
+      tx.set(userDoc(), JSON.parse(JSON.stringify({ profile, ...m, savedItems, pick: state.pick, updatedAt: Date.now() })));
+    });
+    lastSync = Date.now();
+    syncing = true; for (const k of SYNCED) store.set(k, state[k]); syncing = false;
+    // chegou algo de outro aparelho: atualiza a tela
+    if (JSON.stringify([state.saved, state.watched, state.skipped]) !== before) {
+      renderDrawer();
+      if ($('#page-history').classList.contains('on')) renderHistory();
+      if ($('#page-saved').classList.contains('on')) renderSaved();
+      if (isWatched(state.heroId) || isSkipped(state.heroId)) refresh();
+    }
+  } catch (e) { syncing = false; console.warn('Falha ao sincronizar:', e); }
+}
+// voltou para o site depois de um tempo: busca o que mudou em outro aparelho
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - lastSync > 60e3) push(); });
+// navegador embutido de apps (Instagram, Facebook, TikTok, WhatsApp…): o Google bloqueia o login neles
+const inAppBrowser = () => {
+  const u = navigator.userAgent;
+  return /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|TikTok|musical_ly|Snapchat|; wv\)/i.test(u)
+    || (/iPhone|iPad/.test(u) && /AppleWebKit/.test(u) && !/Safari\//.test(u));
+};
+function openInBrowser(){
+  const android = /Android/i.test(navigator.userAgent), url = location.origin + location.pathname;
+  openModal(`<div class="micon">${I.out}</div>
+    <h3>Abra no navegador para entrar</h3>
+    <p>O Google não permite entrar com a conta por dentro de outros apps. ${android
+      ? 'Toque em “Abrir no Chrome” ou, no menu ⋮ do app, escolha “Abrir no navegador”.'
+      : 'Toque nos ⋯ ou no ícone de compartilhar do app e escolha “Abrir no Safari”. Se não aparecer, copie o link e cole no Safari.'}</p>
+    ${android ? `<a class="btn btn-primary" style="width:100%;margin-top:16px" href="intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end">Abrir no Chrome</a>` : ''}
+    <button class="btn${android ? " glass" : " btn-primary"}" data-copylink style="width:100%;margin-top:10px">Copiar link do site</button>
+    <button class="mlink" data-closemodal>Agora não</button>`);
 }
 async function login(){
   if (!fb) return toast('Login indisponível no momento');
+  if (inAppBrowser()) return openInBrowser();
   const provider = new fb.A.GoogleAuthProvider();
   justSignedIn = true;
   try { await fb.A.signInWithPopup(fb.auth, provider); closeModal(); closeLayer($('#drawer')); }
@@ -1661,7 +1713,7 @@ async function logout(){
   await fb.A.signOut(fb.auth);
   state.user = null;
   // aparelho pode ser compartilhado: limpa os dados locais (eles continuam salvos na conta)
-  state.saved = []; state.watched = {}; state.savedItems = {}; state.skipped = {};
+  state.saved = []; state.watched = {}; state.savedItems = {}; state.skipped = {}; state.savedAt = {}; state.removed = {};
   state.profile = { name: '', email: '', birth: '', platforms: [], genres: [], tmdb: state.profile.tmdb, omdb: state.profile.omdb };
   for (const k of SYNCED) store.set(k, state[k]);
   closeLayer();
