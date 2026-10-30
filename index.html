@@ -168,7 +168,7 @@ svg{display:block;flex:none}
 .me{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:rgba(255,255,255,.06);margin-bottom:14px;text-align:left;width:100%}
 .me b{display:block;font-size:15px}
 .me small{color:var(--muted);font-size:12px}
-.avatar{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--accent),#7c4dff);flex:none}
+.avatar{overflow:hidden;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--accent),#7c4dff);flex:none}
 .nav button{display:flex;align-items:center;gap:14px;width:100%;padding:14px 12px;border-radius:14px;font-weight:600;font-size:15px;text-align:left;transition:background .2s}
 .nav button:hover,.nav button:active{background:rgba(255,255,255,.07)}
 .nav svg{color:var(--muted)}
@@ -294,6 +294,11 @@ svg{display:block;flex:none}
 .perks svg{width:20px;height:20px;color:var(--accent2)}
 .mcard .field{margin-top:10px}
 .mcard .field input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);margin-top:0}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.gbtn{width:100%;height:54px;margin-top:20px;border-radius:999px;background:#fff;color:#1f1f1f;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .15s}
+.gbtn:active{transform:scale(.97)}
+.fine{font-size:12px!important;color:var(--muted)!important;margin-top:10px!important}
+.gjoin{display:flex!important;align-items:center;gap:12px}
 .join{display:block;width:100%;text-align:left;margin:14px 0 0;padding:14px 16px;border-radius:18px}
 .join b{display:block;font-size:14px}
 .join small{color:var(--muted);font-size:12px}
@@ -688,10 +693,11 @@ const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0
 const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const store = {
   get(k, d){ try { const v = localStorage.getItem('oqvh_'+k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v){ try { localStorage.setItem('oqvh_'+k, JSON.stringify(v)); } catch {} }
+  set(k, v){ try { localStorage.setItem('oqvh_'+k, JSON.stringify(v)); } catch {} if (SYNCED.includes(k)) scheduleSync(); }
 };
 const fmtRuntime = m => m >= 60 ? `${Math.floor(m/60)}h${m % 60 ? ' ' + m % 60 + 'min' : ''}` : `${m}min`;
 
+const SYNCED = ['saved', 'savedItems', 'watched', 'profile'];
 const NOW = new Date();
 const DAY = NOW.getFullYear()*10000 + (NOW.getMonth()+1)*100 + NOW.getDate();
 const dateShort = NOW.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
@@ -941,6 +947,7 @@ const pfLogo = (P, w = 92) => `<img class="pl" src="https://image.tmdb.org/t/p/w
 const pfBadge = x => { const P = PLATFORMS[x.p]; return P ? `<span class="pf">${pfLogo(P)}${P.name}</span>` : ''; };
 const imdbBadge = x => { const [v, s] = rating(x); return `<span class="imdb${s === 'TMDB' ? ' tm' : ''}"><b>${s}</b>${v ? v.toFixed(1) : '—'}</span>`; };
 const chips = gs => gs.map(g => `<span class="chip">${esc(g)}</span>`).join('');
+const avatarInner = () => state.user?.photoURL ? `<img src="${esc(state.user.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(initials(state.profile.name));
 const initials = n => (n.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') || '?').toUpperCase();
 const watchUrl = x => x.p ? PLATFORMS[x.p].url(encodeURIComponent(x.t)) : (x.watchLink || `https://www.justwatch.com/br/busca?q=${encodeURIComponent(x.t)}`);
 const skLines = (...w) => w.map(v => `<div class="sk-line skel" style="width:${v}%"></div>`).join('');
@@ -1033,8 +1040,8 @@ function renderDrawer(){
   $('#drawer').innerHTML = `
     <div class="brand"><i>${I.play}</i>O que ver hoje</div>
     <button class="me" data-nav="profile">
-      <span class="avatar">${esc(initials(pr.name))}</span>
-      <span><b>${esc(pr.name || 'Olá!')}</b><small>${esc(pr.email || 'Complete seu perfil')}</small></span>
+      <span class="avatar">${avatarInner()}</span>
+      <span><b>${esc(pr.name || 'Olá!')}</b><small>${state.user ? 'Conectado com Google' : esc(pr.email || 'Complete seu perfil')}</small></span>
     </button>
     <nav class="nav">
       <button data-nav="home">${I.home}Início</button>
@@ -1043,7 +1050,9 @@ function renderDrawer(){
       <button data-nav="history">${I.seen.replace(/22/g,'20')}Já assisti${Object.keys(state.watched).length ? `<span class="badge">${Object.keys(state.watched).length}</span>` : ''}</button>
       <button data-nav="profile">${I.user}Meu perfil</button>
     </nav>
-    ${pr.registered ? '' : `<button class="join glass" data-join><b>Crie seu perfil grátis</b><small>Guarde seu histórico e sua lista</small></button>`}
+    ${signedIn() ? (state.user ? `<button class="join glass" data-logout><b>Sair da conta</b><small>${esc(state.user.email || '')}</small></button>` : '')
+      : accountsOn() ? `<button class="join glass gjoin" data-login>${GOOGLE_ICON}<span><b>Entrar com Google</b><small>Seu histórico e sua lista em qualquer aparelho</small></span></button>`
+      : `<button class="join glass" data-join><b>Crie seu perfil grátis</b><small>Guarde seu histórico e sua lista</small></button>`}
     <div class="drawer-foot">
       ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
       ${state.daily ? `Dados reais · ${updatedLabel()}<br>` : state.live ? '' : 'Modo demonstração · dados de exemplo<br>'}
@@ -1127,7 +1136,7 @@ function renderProfile(){
   const pr = state.profile;
   $('#profileBody').innerHTML = `
     <div class="prof-top">
-      <span class="avatar">${esc(initials(pr.name))}</span>
+      <span class="avatar">${avatarInner()}</span>
       <b>${esc(pr.name || 'Seu nome')}</b><small>${esc(pr.email || 'seu@email.com')}</small>
     </div>
     <div class="stats">
@@ -1326,20 +1335,22 @@ function unwatch(id){
 let invited = false;
 try { invited = !!sessionStorage.getItem('oqvh_invite'); } catch {}
 function inviteSignup(force){
-  if (!force && (invited || state.profile.registered || modalOpen())) return;
+  if (!force && (invited || signedIn() || modalOpen())) return;
   invited = true;
   try { sessionStorage.setItem('oqvh_invite', '1'); } catch {}
   openModal(`<div class="micon">${I.play}</div>
     <h3>Antes de ir, salve sua jornada 🍿</h3>
-    <p>Crie seu perfil grátis em segundos e tenha sempre à mão o que você já assistiu e tudo o que quer ver.</p>
+    <p>${accountsOn() ? 'Entre com sua conta Google em um toque e leve seu histórico e sua lista de filmes para qualquer aparelho.' : 'Crie seu perfil grátis em segundos e tenha sempre à mão o que você já assistiu e tudo o que quer ver.'}</p>
     <ul class="perks">
       <li>${I.seen}Histórico do que você já viu</li>
       <li>${I.bookmark}Sua biblioteca para assistir depois</li>
       <li>${I.spark}Recomendações que aprendem com o seu gosto</li>
     </ul>
+    ${accountsOn() ? `<button class="gbtn" data-login>${GOOGLE_ICON}Continuar com Google</button>
+    <p class="fine">Grátis. Seu histórico e sua lista ficam na sua conta e aparecem em qualquer aparelho.</p>` : `
     <div class="field"><input id="su-name" placeholder="Seu nome" autocomplete="name" value="${esc(state.profile.name)}"></div>
     <div class="field"><input id="su-email" type="email" placeholder="Seu e-mail" autocomplete="email" value="${esc(state.profile.email)}"></div>
-    <button class="btn btn-primary" data-signup style="width:100%;margin-top:16px">Criar meu perfil grátis</button>
+    <button class="btn btn-primary" data-signup style="width:100%;margin-top:16px">Criar meu perfil grátis</button>`}
     <button class="mlink" data-closemodal>Agora não</button>`);
 }
 // celular: depois de marcar ou salvar 2 títulos
@@ -1409,6 +1420,8 @@ document.addEventListener('click', e => {
   if ((el = t.closest('[data-unwatch]'))) return unwatch(el.dataset.unwatch);
   if (t.closest('[data-signup]')) return signup();
   if (t.closest('[data-closemodal]')) return closeModal();
+  if (t.closest('[data-login]')) return login();
+  if (t.closest('[data-logout]')) return logout();
   if (t.closest('[data-join]')) { closeLayer($('#drawer')); return inviteSignup(true); }
   if ((el = t.closest('[data-watched]'))) return askWatched(el.dataset.watched);
   if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
@@ -1434,11 +1447,108 @@ document.addEventListener('mouseout', e => { if (!e.relatedTarget && e.clientY <
 $('#q').addEventListener('input', renderSearch);
 addEventListener('scroll', () => $('#topbar').classList.toggle('solid', scrollY > innerHeight * .55), { passive: true });
 
+/* ================= Contas: login com Google e sincronização (Firebase) =================
+   Cole aqui a configuração do app web do Firebase. Ela é pública por natureza: quem protege
+   os dados são as regras do Firestore (cada pessoa só lê e grava o próprio documento).
+   Sem configuração, o perfil continua salvo só neste navegador. */
+const FIREBASE = null;
+const GOOGLE_ICON = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+let fb = null, syncTimer, syncing = false, justSignedIn = false;
+const accountsOn = () => !!FIREBASE;
+const signedIn = () => accountsOn() ? !!state.user : !!state.profile.registered;
+const userDoc = () => fb.F.doc(fb.db, 'users', state.user.uid);
+// guarda só o necessário de cada título para mostrar histórico e lista em outro aparelho
+const slim = x => x && JSON.parse(JSON.stringify((({ id, tid, type, live, full, t, o, y, tscore, iscore, vc, gids, g, s, p, ps, dur, img }) =>
+  ({ id, tid, type, live, full, t, o, y, tscore, iscore, vc, gids, g, s, p, ps, dur, img }))(x)));
+
+async function initAccounts(){
+  if (!accountsOn()) return;
+  try {
+    const base = 'https://www.gstatic.com/firebasejs/11.0.2/';
+    const [app, A, F] = await Promise.all(['firebase-app', 'firebase-auth', 'firebase-firestore'].map(m => import(base + m + '.js')));
+    const a = app.initializeApp(FIREBASE);
+    fb = { auth: A.getAuth(a), db: F.getFirestore(a), A, F };
+    A.onAuthStateChanged(fb.auth, async user => {
+      state.user = user;
+      if (user) await pullAndMerge(user);
+      renderDrawer();
+      if ($('#page-profile').classList.contains('on')) renderProfile();
+    });
+  } catch (e) { console.warn('Contas indisponíveis:', e); fb = null; }
+}
+
+// junta o que está na conta com o que a pessoa fez neste aparelho antes de entrar
+async function pullAndMerge(user){
+  syncing = true;
+  try {
+    const snap = await fb.F.getDoc(userDoc());
+    const r = snap.exists() ? snap.data() : {};
+    const watched = { ...(r.watched || {}) };
+    for (const [id, w] of Object.entries(state.watched)) if (!watched[id] || w.at > watched[id].at) watched[id] = w;
+    const rp = r.profile || {}, lp = state.profile;
+    state.watched = watched;
+    state.saved = [...new Set([...state.saved, ...(r.saved || [])])].filter(id => !watched[id]);
+    state.savedItems = { ...(r.savedItems || {}), ...state.savedItems };
+    state.profile = { ...lp, ...rp, tmdb: lp.tmdb, omdb: lp.omdb,
+      name: rp.name || lp.name || user.displayName || '', email: user.email || rp.email || '',
+      genres: rp.genres?.length ? rp.genres : lp.genres, platforms: rp.platforms?.length ? rp.platforms : lp.platforms, registered: true };
+    for (const k of SYNCED) store.set(k, state[k === 'profile' ? 'profile' : k]);
+  } catch (e) { console.warn('Falha ao carregar a conta:', e); }
+  syncing = false;
+  await push();
+  if (justSignedIn) { justSignedIn = false; toast(`Olá, ${(state.profile.name || 'você').split(' ')[0]}! Sua conta está conectada`); }
+  state.shuffle = 0;
+  refresh();
+}
+function scheduleSync(){
+  if (!fb || !state.user || syncing) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(push, 800);
+}
+async function push(){
+  if (!fb || !state.user) return;
+  const { tmdb, omdb, ...profile } = state.profile;
+  const savedItems = {};
+  for (const id of [...state.saved, ...Object.keys(state.watched)]) {
+    const x = state.savedItems[id] || (items.get(id)?.live ? items.get(id) : null);
+    if (x) savedItems[id] = slim(x);
+  }
+  try { await fb.F.setDoc(userDoc(), JSON.parse(JSON.stringify({ profile, saved: state.saved, watched: state.watched, savedItems, updatedAt: Date.now() }))); }
+  catch (e) { console.warn('Falha ao sincronizar:', e); }
+}
+async function login(){
+  if (!fb) return toast('Login indisponível no momento');
+  const provider = new fb.A.GoogleAuthProvider();
+  justSignedIn = true;
+  try { await fb.A.signInWithPopup(fb.auth, provider); closeModal(); closeLayer($('#drawer')); }
+  catch (e) {
+    justSignedIn = false;
+    if (e.code === 'auth/popup-blocked') { justSignedIn = true; return fb.A.signInWithRedirect(fb.auth, provider); }
+    if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) toast('Não foi possível entrar. Tente de novo.');
+  }
+}
+async function logout(){
+  if (!fb) return;
+  await push();
+  await fb.A.signOut(fb.auth);
+  state.user = null;
+  // aparelho pode ser compartilhado: limpa os dados locais (eles continuam salvos na conta)
+  state.saved = []; state.watched = {}; state.savedItems = {};
+  state.profile = { name: '', email: '', birth: '', platforms: [], genres: [], tmdb: state.profile.tmdb, omdb: state.profile.omdb };
+  for (const k of SYNCED) store.set(k, state[k]);
+  closeLayer();
+  renderDrawer();
+  state.shuffle = 0;
+  refresh();
+  toast('Você saiu da sua conta');
+}
+
 /* ================= Início ================= */
 syncSeg();
 renderDrawer();
 heroSkeleton();
 topsSkeleton();
+initAccounts();
 loadDaily().then(daily => {
   state.daily = daily;
   state.live = !daily && !!tmdbKey();
