@@ -7,6 +7,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>O que ver hoje</title>
+<meta name="description" content="A recomendação de filme ou série do dia, nas suas plataformas: Netflix, Prime Video, Disney+, HBO Max, Apple TV e Paramount+.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="O que ver hoje">
+<meta property="og:title" content="O que ver hoje">
+<meta property="og:description" content="A recomendação de filme ou série do dia, nas suas plataformas de streaming.">
+<meta property="og:url" content="https://lsato2.github.io/o-que-ver-hoje/">
+<meta property="og:image" content="https://lsato2.github.io/o-que-ver-hoje/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="O que ver hoje">
+<link rel="preconnect" href="https://image.tmdb.org">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -183,7 +199,8 @@ svg{display:block;flex:none}
 .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
 .fact{padding:14px 12px;border-radius:18px;background:var(--bg2);border:1px solid var(--line)}
 .fact small{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-.fact b{font-size:16px;display:flex;align-items:center;gap:6px}
+.fact{min-width:0}
+.fact b{font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
 .fact em{font-style:normal;font-size:12px;color:var(--muted);font-weight:600}
 .fact .imdb b{font-size:9px}
 .d-sec{margin-top:26px}
@@ -245,6 +262,8 @@ svg{display:block;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);z-index:90;transform:translate(-50%,140%);opacity:0;padding:13px 18px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s}
 .toast.on{transform:translate(-50%,0);opacity:1}
 
+@media (max-width:400px){.hero .actions{gap:8px}.hero .round{width:50px;height:50px}.hero .btn-primary{padding:0 14px;white-space:nowrap}}
+@media (max-width:360px){.facts{grid-template-columns:1fr 1fr}.fact:last-child{grid-column:span 2}.hero .actions{gap:6px}.hero .round{width:46px;height:46px}.hero .btn-primary{padding:0 12px;font-size:14px}}
 @media (min-width:900px){
   .hero-content{padding:0 56px 104px}
   .tops-head,.row-head{padding:0 56px}
@@ -673,6 +692,7 @@ const I = {
   home:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
   user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   spark:'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z" fill="currentColor"/></svg>',
+  share:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
   out:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>'
 };
 const bookmarkSm = I.bookmark.replace(/width="22" height="22"/,'width="18" height="18"');
@@ -686,7 +706,7 @@ function imgTag(x, kind){
   const path = wide ? (im.b || im.p) : (im.p || im.b);
   if (!path) return '';
   const px = innerWidth * (devicePixelRatio || 1);
-  const size = !hero ? 'w342' : wide ? (px > 1600 ? 'original' : 'w1280') : (px > 800 ? 'original' : 'w780');
+  const size = !hero ? 'w342' : wide ? (px > 2200 ? 'original' : 'w1280') : 'w780';
   return `<img src="https://image.tmdb.org/t/p/${size}${path}" alt="" ${hero ? 'fetchpriority="high"' : 'loading="lazy"'} onerror="this.parentNode.classList.remove('has-img');this.remove()">`;
 }
 function art(x, kind, cls, inner = ''){
@@ -889,6 +909,7 @@ function renderHero(x, m){
       <div class="actions">
         <button class="btn btn-primary" data-open="${x.id}">Ver detalhes</button>
         <button class="round glass${isSaved(x.id) ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar para depois">${I.bookmark}</button>
+        <button class="round glass" data-share="${x.id}" aria-label="Compartilhar">${I.share}</button>
         <button class="round glass" data-reroll aria-label="Outra sugestão">${I.shuffle}</button>
       </div>
     </div>
@@ -970,7 +991,10 @@ function renderDetail(x){
   $('#detail').innerHTML = art(x, 'hero', 'd-hero', `<div class="big">${esc(x.t)}</div><div class="veil"></div>`) + `
     <div class="d-top">
       <button class="icon-btn glass" data-close aria-label="Fechar">${I.down}</button>
-      <button class="icon-btn glass${sv ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar">${bookmarkSm}</button>
+      <div style="display:flex;gap:10px">
+        <button class="icon-btn glass" data-share="${x.id}" aria-label="Compartilhar">${I.share.replace(/20/g, '18')}</button>
+        <button class="icon-btn glass${sv ? ' on' : ''}" data-save="${x.id}" aria-label="Salvar">${bookmarkSm}</button>
+      </div>
     </div>
     <div class="d-body">
       <span class="type-tag">${x.type === 'movie' ? 'Filme' : 'Série'}</span>
@@ -980,7 +1004,7 @@ function renderDetail(x){
       <div class="facts">
         <div class="fact"><small>Nota</small><b>${imdbBadge(x)}</b></div>
         <div class="fact"><small>Ano</small><b>${esc(x.y || '—')}</b></div>
-        <div class="fact"><small>${x.type === 'movie' ? 'Duração' : 'Formato'}</small><b style="font-size:14px">${esc(x.dur || (pending ? '…' : '—'))}</b></div>
+        <div class="fact"><small>${x.type === 'movie' ? 'Duração' : 'Formato'}</small><b style="font-size:13px">${esc(x.dur || (pending ? '…' : '—'))}</b></div>
       </div>
       ${x.g.length ? `<div class="d-sec"><h4>Categoria</h4><div class="chips">${chips(x.g)}</div></div>` : ''}
       <div class="d-sec"><h4>Sinopse</h4><p class="syn">${esc(x.s)}</p></div>
@@ -1145,6 +1169,19 @@ function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400);
 }
+async function share(id){
+  const x = getItem(id), P = PLATFORMS[x.p];
+  const url = location.origin + location.pathname + '?t=' + encodeURIComponent(id);
+  const text = `Hoje eu recomendo: ${x.t}${P ? ` (${P.prep} ${P.name})` : ''} 🍿`;
+  if (navigator.share) { try { await navigator.share({ title: `${x.t} · O que ver hoje`, text, url }); } catch {} return; }
+  try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('Link copiado · é só colar no WhatsApp'); }
+  catch { toast('Não foi possível copiar o link'); }
+}
+// link compartilhado (?t=id) abre direto o título
+function openShared(){
+  const id = new URLSearchParams(location.search).get('t');
+  if (id && getItem(id)) openDetail(id);
+}
 function toggleSave(id){
   const was = isSaved(id), x = getItem(id);
   state.saved = was ? state.saved.filter(s => s !== id) : [id, ...state.saved];
@@ -1191,6 +1228,7 @@ document.addEventListener('click', e => {
   const t = e.target;
   let el;
   if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
+  if ((el = t.closest('[data-share]'))) return share(el.dataset.share);
   if ((el = t.closest('[data-save]'))) return toggleSave(el.dataset.save);
   if ((el = t.closest('[data-open]'))) return openDetail(el.dataset.open);
   if ((el = t.closest('[data-nav]'))) return nav(el.dataset.nav);
@@ -1217,7 +1255,7 @@ loadDaily().then(daily => {
   state.daily = daily;
   state.live = !daily && !!tmdbKey();
   renderDrawer();
-  refresh();
+  refresh().then(openShared);
 });
 </script>
 </body>

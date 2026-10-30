@@ -39,7 +39,7 @@ jobs:
           PREV_URL: https://lsato2.github.io/o-que-ver-hoje/data.json
 
       - name: Montar site
-        run: mkdir -p _site && cp index.html data.json _site/
+        run: mkdir -p _site && cp index.html data.json manifest.webmanifest og.jpg *.png _site/
 
       - uses: actions/configure-pages@v5
 
