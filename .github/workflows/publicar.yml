@@ -44,7 +44,7 @@ jobs:
         run: node scripts/check-site.mjs
 
       - name: Montar site
-        run: mkdir -p _site && cp -r index.html 404.html data.json archive.json manifest.webmanifest og.jpg *.png t _site/
+        run: mkdir -p _site && cp -r index.html 404.html data.json syn.json archive.json manifest.webmanifest og.jpg *.png t _site/
 
       - uses: actions/configure-pages@v5
 

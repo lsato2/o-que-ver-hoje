@@ -25,8 +25,9 @@ for (const id of ['hero', 'tops', 'drawer', 'detail', 'modal', 'toast', 'page-pr
 if (!read('404.html').includes('?t=')) fail('404.html não redireciona links antigos');
 
 // 2) Dados do dia
-let data = { items: [], tops: { movie: {}, tv: {} } };
+let data = { items: [], tops: { movie: {}, tv: {} } }, syn = {};
 try { data = JSON.parse(read('data.json')); } catch (e) { fail('data.json inválido: ' + e.message); }
+try { syn = JSON.parse(read('syn.json')); } catch (e) { fail('syn.json inválido: ' + e.message); }
 const ids = new Set(data.items.map(x => x.id));
 if (data.items.length < 300) fail(`data.json com só ${data.items.length} títulos`);
 if (ids.size !== data.items.length) fail('data.json com títulos repetidos');
@@ -35,7 +36,7 @@ for (const x of data.items) {
   if (!/^[mt]\d+$/.test(x.id)) bad.push('id');
   if (!['movie', 'tv'].includes(x.type)) bad.push('tipo');
   if (!x.t) bad.push('nome');
-  if (!x.s) bad.push('sinopse');
+  if (!syn[x.id]) bad.push('sinopse');
   if (!Array.isArray(x.img) || !x.img[0]) bad.push('capa');
   if (!Array.isArray(x.ps) || !x.ps.includes(x.p)) bad.push('plataforma');
   if (!Array.isArray(x.g)) bad.push('gêneros');

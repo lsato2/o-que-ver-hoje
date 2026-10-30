@@ -348,6 +348,10 @@ svg{display:block;flex:none}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 .credits{margin:28px 0 8px;font-size:11px;line-height:1.5;color:var(--muted,#888);opacity:.6;text-align:center}
+/* acessibilidade: contorno visível só para quem navega pelo teclado; menos movimento para quem pede */
+:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.hero .offline .reason,.hero .offline .actions{display:flex}
 </style>
 </head>
 <body>
@@ -371,19 +375,19 @@ svg{display:block;flex:none}
 
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Menu"></aside>
-<section class="sheet" id="detail" aria-label="Detalhes"></section>
+<section class="sheet" id="detail" role="dialog" aria-modal="true" aria-label="Detalhes do título"></section>
 
-<section class="page" id="page-profile">
+<section class="page" id="page-profile" role="dialog" aria-modal="true" aria-label="Meu perfil">
   <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Meu perfil</h2></div>
   <div class="page-body" id="profileBody"></div>
 </section>
 
-<section class="page" id="page-saved">
+<section class="page" id="page-saved" role="dialog" aria-modal="true" aria-label="Assistir depois">
   <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Assistir depois</h2></div>
   <div class="page-body" id="savedBody"></div>
 </section>
 
-<section class="page" id="page-search">
+<section class="page" id="page-search" role="dialog" aria-modal="true" aria-label="Pesquisar">
   <div class="page-head">
     <button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
     <label class="sinput"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Filme, série ou gênero…" autocomplete="off" enterkeyhint="search"></label>
@@ -391,7 +395,7 @@ svg{display:block;flex:none}
   <div class="page-body" id="searchBody"></div>
 </section>
 
-<section class="page" id="page-history">
+<section class="page" id="page-history" role="dialog" aria-modal="true" aria-label="Já assisti">
   <div class="page-head"><button class="icon-btn glass" data-close aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>Já assisti</h2></div>
   <div class="page-body" id="historyBody"></div>
 </section>
@@ -411,290 +415,6 @@ const PLATFORMS = {
   paramount:{logo:'pkx3klJlwW5JdtaulvDx6hDNtch',name:'Paramount+',short:'P+',prep:'no',color:'#0064FF',ids:'531',url:q=>`https://www.paramountplus.com/br/search/?q=${q}`}
 };
 const GENRES = ['Ação','Aventura','Animação','Comédia','Crime','Documentário','Drama','Família','Fantasia','Ficção científica','Guerra','Mistério','Romance','Suspense','Terror'];
-
-const RAW = {
-  netflix:{
-    movie:[
-      ['Alerta Vermelho','Red Notice',2021,6.3,'Ação,Comédia','1h 58min','Um agente do FBI precisa se aliar ao ladrão de arte mais procurado do mundo para capturar uma criminosa ainda mais esperta, numa caçada pelos três ovos lendários de Cleópatra.'],
-      ['Não Olhe para Cima',"Don't Look Up",2021,7.2,'Comédia,Ficção científica','2h 18min','Dois astrônomos descobrem um cometa em rota de colisão com a Terra e tentam alertar uma humanidade distraída por política, celebridades e redes sociais.'],
-      ['Bird Box','Bird Box',2018,6.6,'Terror,Suspense','2h 4min','Depois que uma presença misteriosa passa a levar ao desespero quem a vê, uma mãe atravessa um rio de olhos vendados com duas crianças em busca de refúgio.'],
-      ['O Irlandês','The Irishman',2019,7.8,'Crime,Drama','3h 29min','Um veterano de guerra relembra décadas trabalhando para a máfia e sua ligação com o desaparecimento do sindicalista Jimmy Hoffa.'],
-      ['Glass Onion','Glass Onion',2022,7.1,'Mistério,Comédia','2h 19min','O detetive Benoit Blanc é convidado para a ilha grega de um bilionário excêntrico, onde um jogo de assassinato acaba virando crime de verdade.'],
-      ['Resgate','Extraction',2020,6.7,'Ação,Suspense','1h 56min','Um mercenário sem nada a perder é contratado para resgatar o filho sequestrado de um chefão do crime em Daca.'],
-      ['Nada de Novo no Front','All Quiet on the Western Front',2022,7.8,'Guerra,Drama','2h 28min','Um jovem soldado alemão se alista cheio de entusiasmo e descobre o horror das trincheiras da Primeira Guerra Mundial.'],
-      ['Enola Holmes','Enola Holmes',2020,6.6,'Mistério,Aventura','2h 3min','A irmã caçula de Sherlock Holmes parte sozinha para Londres atrás da mãe desaparecida e se envolve numa conspiração.'],
-      ['O Poço','The Platform',2019,7.0,'Terror,Ficção científica','1h 34min','Numa prisão vertical, uma plataforma de comida desce andar por andar — e quem está embaixo só come o que sobra dos de cima.'],
-      ['Roma','Roma',2018,7.7,'Drama','2h 15min','Na Cidade do México dos anos 70, a rotina de uma empregada doméstica se entrelaça com a crise de uma família de classe média.']
-    ],
-    tv:[
-      ['Stranger Things','Stranger Things',2016,8.7,'Ficção científica,Terror','4 temporadas','Em Hawkins, o sumiço de um garoto revela experimentos secretos, forças sobrenaturais e uma menina com poderes misteriosos.'],
-      ['Round 6','Squid Game',2021,8.0,'Suspense,Drama','3 temporadas','Centenas de pessoas endividadas aceitam disputar jogos infantis por um prêmio milionário. Quem perde, não sai vivo.'],
-      ['Wandinha','Wednesday',2022,8.0,'Comédia,Mistério','2 temporadas','Wandinha Addams investiga uma série de assassinatos enquanto tenta sobreviver ao novo internato, a Escola Nunca Mais.'],
-      ['Dark','Dark',2017,8.7,'Ficção científica,Mistério','3 temporadas','O desaparecimento de crianças numa cidadezinha alemã expõe segredos de quatro famílias e uma viagem no tempo que conecta gerações.'],
-      ['La Casa de Papel','Money Heist',2017,8.2,'Crime,Suspense','5 partes','Um gênio conhecido como Professor reúne oito criminosos para executar o maior assalto da história da Espanha.'],
-      ['The Crown','The Crown',2016,8.6,'Drama','6 temporadas','A trajetória da rainha Elizabeth II, dos primeiros anos de reinado às crises da família real no fim do século XX.'],
-      ['Bebê Rena','Baby Reindeer',2024,7.7,'Drama,Suspense','Minissérie','Um comediante em início de carreira oferece uma xícara de chá a uma desconhecida e passa a ser perseguido por ela.'],
-      ['Ozark','Ozark',2017,8.5,'Crime,Drama','4 temporadas','Um consultor financeiro muda a família para os lagos do Missouri para lavar dinheiro de um cartel mexicano.'],
-      ['Black Mirror','Black Mirror',2011,8.7,'Ficção científica,Suspense','7 temporadas','Episódios independentes sobre o lado sombrio da tecnologia e o que ela revela sobre nós.'],
-      ['O Gambito da Rainha',"The Queen's Gambit",2020,8.5,'Drama','Minissérie','Uma órfã prodígio do xadrez enfrenta os maiores enxadristas do mundo enquanto luta contra os próprios vícios.']
-    ]
-  },
-  prime:{
-    movie:[
-      ['Saltburn','Saltburn',2023,7.0,'Suspense,Drama','2h 11min','Um bolsista de Oxford é convidado a passar o verão na mansão da família aristocrática de um colega — e se torna obcecado por ela.'],
-      ['A Guerra do Amanhã','The Tomorrow War',2021,6.5,'Ação,Ficção científica','2h 18min','Soldados do futuro chegam ao presente pedindo reforços: daqui a 30 anos, a humanidade está perdendo uma guerra contra alienígenas.'],
-      ['Air: A História por Trás do Logo','Air',2023,7.4,'Drama','1h 51min','Como um executivo da Nike apostou tudo para convencer um jovem Michael Jordan a assinar com a marca.'],
-      ['Manchester à Beira-Mar','Manchester by the Sea',2016,7.8,'Drama','2h 17min','Um zelador solitário volta à cidade natal para cuidar do sobrinho após a morte do irmão e precisa encarar o próprio passado.'],
-      ['O Som do Silêncio','Sound of Metal',2019,7.7,'Drama','2h','Um baterista de heavy metal começa a perder a audição e precisa reinventar a vida.'],
-      ['Road House','Road House',2024,6.2,'Ação','2h 1min','Um ex-lutador do UFC vira segurança de um bar nas Florida Keys e descobre que o lugar é alvo de gente perigosa.'],
-      ['Uma Noite em Miami','One Night in Miami',2020,7.1,'Drama','1h 54min','Muhammad Ali, Malcolm X, Sam Cooke e Jim Brown passam uma noite juntos discutindo fama, fé e direitos civis.'],
-      ['Sem Remorso','Without Remorse',2021,5.8,'Ação,Suspense','1h 49min','Um militar de elite busca vingança após o assassinato da esposa e descobre uma conspiração internacional.'],
-      ['Borat: Fita de Cinema Seguinte','Borat Subsequent Moviefilm',2020,6.6,'Comédia','1h 36min','O jornalista cazaque volta aos EUA com a filha numa missão absurda que expõe o país às vésperas da eleição.'],
-      ['Operação Natal','Red One',2024,6.7,'Ação,Comédia','2h 3min','Quando o Papai Noel é sequestrado, o chefe de segurança do Polo Norte se une a um caçador de recompensas para salvar o Natal.']
-    ],
-    tv:[
-      ['The Boys','The Boys',2019,8.7,'Ação,Comédia','4 temporadas','Um grupo de justiceiros decide enfrentar super-heróis corruptos que abusam da fama e dos próprios poderes.'],
-      ['Fallout','Fallout',2024,8.3,'Ficção científica,Aventura','1 temporada','Duzentos anos após o apocalipse nuclear, uma moradora de um abrigo subterrâneo sai pela primeira vez para o mundo devastado.'],
-      ['Reacher','Reacher',2022,8.0,'Ação,Crime','3 temporadas','Um ex-investigador militar andarilho chega a uma cidadezinha e é acusado de um assassinato que não cometeu.'],
-      ['Invencível','Invincible',2021,8.7,'Animação,Ação','3 temporadas','Filho do super-herói mais poderoso da Terra, Mark desenvolve seus poderes e descobre que o legado do pai é mais sombrio do que parece.'],
-      ['Os Anéis de Poder','The Rings of Power',2022,6.9,'Fantasia,Aventura','2 temporadas','Milhares de anos antes de O Hobbit, a Terra-média vê o surgimento dos anéis e o retorno de um mal antigo.'],
-      ['Jack Ryan','Jack Ryan',2018,8.0,'Ação,Suspense','4 temporadas','Um analista da CIA é tirado da mesa de trabalho e lançado em missões de campo perigosas pelo mundo.'],
-      ['Fleabag','Fleabag',2016,8.7,'Comédia,Drama','2 temporadas','Uma londrina caótica e irreverente tenta lidar com o luto, a família e a vida amorosa — sempre falando com a câmera.'],
-      ['Belas Maldições','Good Omens',2019,8.0,'Fantasia,Comédia','2 temporadas','Um anjo e um demônio que se acostumaram à vida na Terra se unem para impedir o apocalipse.'],
-      ['Maravilhosa Sra. Maisel','The Marvelous Mrs. Maisel',2017,8.7,'Comédia,Drama','5 temporadas','Nos anos 50, uma dona de casa de Nova York descobre um talento inesperado para a comédia stand-up.'],
-      ['Sr. & Sra. Smith','Mr. & Mrs. Smith',2024,7.3,'Ação,Comédia','1 temporada','Dois desconhecidos são contratados por uma agência secreta para viver como casal e cumprir missões de espionagem.']
-    ]
-  },
-  disney:{
-    movie:[
-      ['Divertida Mente 2','Inside Out 2',2024,7.6,'Animação,Família','1h 36min','Riley entra na adolescência e novas emoções, lideradas pela Ansiedade, chegam para bagunçar a sala de controle.'],
-      ['Deadpool & Wolverine','Deadpool & Wolverine',2024,7.6,'Ação,Comédia','2h 8min','Deadpool é recrutado pela TVA e precisa convencer um Wolverine nada animado a salvar o seu universo.'],
-      ['Avatar: O Caminho da Água','Avatar: The Way of Water',2022,7.5,'Ficção científica,Aventura','3h 12min','Jake Sully e Neytiri buscam refúgio com os filhos entre os clãs dos oceanos de Pandora quando uma antiga ameaça retorna.'],
-      ['Pobres Criaturas','Poor Things',2023,7.8,'Comédia,Fantasia','2h 21min','Trazida de volta à vida por um cientista excêntrico, Bella parte numa jornada pelo mundo em busca de liberdade.'],
-      ['Viva: A Vida é uma Festa','Coco',2017,8.4,'Animação,Família','1h 45min','Um garoto apaixonado por música vai parar na Terra dos Mortos e precisa descobrir a verdadeira história da família.'],
-      ['Soul','Soul',2020,8.0,'Animação,Comédia','1h 40min','Um professor de música que sonha com o jazz vai parar num plano espiritual e precisa ajudar uma alma a encontrar seu propósito.'],
-      ['Vingadores: Ultimato','Avengers: Endgame',2019,8.4,'Ação,Ficção científica','3h 1min','Após o estalo de Thanos, os heróis restantes se reúnem para uma última missão capaz de desfazer a tragédia.'],
-      ['Free Guy','Free Guy',2021,7.1,'Comédia,Ação','1h 55min','Um caixa de banco descobre que é um personagem secundário de um videogame e decide virar o herói da própria história.'],
-      ['Encanto','Encanto',2021,7.2,'Animação,Família','1h 42min','Na Colômbia, a única Madrigal sem dons mágicos pode ser a última esperança da família quando a magia começa a sumir.'],
-      ['Luca','Luca',2021,7.4,'Animação,Aventura','1h 35min','Dois monstros marinhos vivem um verão inesquecível numa cidade costeira italiana, escondendo sua verdadeira forma.']
-    ],
-    tv:[
-      ['O Urso','The Bear',2022,8.5,'Drama,Comédia','3 temporadas','Um chef premiado volta a Chicago para assumir a lanchonete caótica da família após uma tragédia.'],
-      ['Xógum','Shōgun',2024,8.6,'Drama,Aventura','1 temporada','No Japão de 1600, um navegador inglês naufraga e se vê no centro de uma guerra de poder entre senhores feudais.'],
-      ['The Mandalorian','The Mandalorian',2019,8.6,'Ficção científica,Aventura','3 temporadas','Um caçador de recompensas solitário atravessa a galáxia protegendo uma misteriosa criança com poderes da Força.'],
-      ['Andor','Andor',2022,8.5,'Ficção científica,Suspense','2 temporadas','A transformação de um ladrão sem causa em um dos rebeldes que desafiaram o Império.'],
-      ['Loki','Loki',2021,8.2,'Fantasia,Ação','2 temporadas','Capturado pela TVA, o deus da trapaça é obrigado a consertar linhas do tempo que ele mesmo ajudou a quebrar.'],
-      ['Only Murders in the Building','Only Murders in the Building',2021,8.1,'Comédia,Mistério','4 temporadas','Três vizinhos fanáticos por true crime investigam um assassinato no prédio — e gravam um podcast sobre isso.'],
-      ['WandaVision','WandaVision',2021,7.9,'Fantasia,Mistério','Minissérie','Wanda e Visão vivem uma vida perfeita no estilo sitcom… até que a realidade começa a rachar.'],
-      ['Abbott Elementary','Abbott Elementary',2021,8.2,'Comédia','4 temporadas','Professores dedicados de uma escola pública da Filadélfia fazem de tudo pelos alunos, apesar da falta de recursos.'],
-      ['Percy Jackson e os Olimpianos','Percy Jackson and the Olympians',2023,6.9,'Fantasia,Aventura','1 temporada','Um garoto de 12 anos descobre ser filho de um deus grego e parte numa missão para evitar uma guerra no Olimpo.'],
-      ['American Horror Story','American Horror Story',2011,7.9,'Terror,Suspense','12 temporadas','Antologia de terror em que cada temporada traz uma nova história macabra, de casas assombradas a hospícios.']
-    ]
-  },
-  hbo:{
-    movie:[
-      ['Duna: Parte Dois','Dune: Part Two',2024,8.5,'Ficção científica,Aventura','2h 46min','Paul Atreides se une aos Fremen em Arrakis para vingar a família, enquanto tenta impedir um futuro terrível que só ele consegue enxergar.'],
-      ['Coringa','Joker',2019,8.4,'Crime,Drama','2h 2min','Ignorado pela sociedade, um comediante fracassado de Gotham mergulha numa espiral de violência que o transforma num símbolo do caos.'],
-      ['Batman','The Batman',2022,7.8,'Crime,Ação','2h 56min','Em seu segundo ano como vigilante, Batman segue as pistas de um assassino que tem como alvo a elite corrupta de Gotham.'],
-      ['Barbie','Barbie',2023,6.8,'Comédia,Fantasia','1h 54min','Barbie vive o dia perfeito na Barbielândia até começar a ter pensamentos sobre a morte — e precisa ir ao mundo real para entender o que está acontecendo.'],
-      ['Pecadores','Sinners',2025,7.6,'Terror,Drama','2h 17min','Gêmeos voltam à cidade natal no Mississippi para recomeçar a vida e descobrem que um mal ainda maior está à espera deles.'],
-      ['Interestelar','Interstellar',2014,8.7,'Ficção científica,Drama','2h 49min','Com a Terra morrendo, um ex-piloto lidera uma missão através de um buraco de minhoca em busca de um novo lar para a humanidade.'],
-      ['Invocação do Mal','The Conjuring',2013,7.5,'Terror,Suspense','1h 52min','Os investigadores paranormais Ed e Lorraine Warren ajudam uma família aterrorizada por uma presença sombria numa fazenda isolada.'],
-      ['Furiosa: Uma Saga Mad Max','Furiosa: A Mad Max Saga',2024,7.5,'Ação,Aventura','2h 28min','Sequestrada ainda criança, a jovem Furiosa sobrevive às gangues do deserto enquanto planeja voltar para casa.'],
-      ['Wonka','Wonka',2023,7.0,'Comédia,Fantasia','1h 56min','O jovem Willy Wonka chega à cidade com o sonho de abrir uma loja de chocolates, mas precisa enfrentar um cartel de doces.'],
-      ['Godzilla e Kong: O Novo Império','Godzilla x Kong: The New Empire',2024,6.0,'Ação,Ficção científica','1h 55min','Godzilla e Kong unem forças contra uma ameaça colossal escondida nas profundezas da Terra Oca.']
-    ],
-    tv:[
-      ['The Last of Us','The Last of Us',2023,8.6,'Drama,Ficção científica','2 temporadas','Vinte anos após uma pandemia devastar o mundo, um sobrevivente endurecido precisa atravessar os EUA escoltando uma garota que pode ser a cura.'],
-      ['A Casa do Dragão','House of the Dragon',2022,8.3,'Fantasia,Drama','2 temporadas','Duzentos anos antes de Game of Thrones, uma disputa pelo Trono de Ferro divide a família Targaryen e leva Westeros à guerra.'],
-      ['Game of Thrones','Game of Thrones',2011,9.2,'Fantasia,Drama','8 temporadas','Nobres famílias disputam o Trono de Ferro enquanto uma ameaça antiga desperta além da Muralha.'],
-      ['Succession','Succession',2018,8.9,'Drama','4 temporadas','Os filhos de um magnata da mídia disputam o controle do império da família quando o patriarca começa a pensar na sucessão.'],
-      ['The White Lotus','The White Lotus',2021,8.0,'Comédia,Drama','3 temporadas','Hóspedes ricos e funcionários de um resort de luxo têm uma semana de férias que termina em tragédia.'],
-      ['Pinguim','The Penguin',2024,8.6,'Crime,Drama','Minissérie','Depois da queda de Falcone, Oz Cobb aproveita o vácuo de poder para tentar dominar o submundo do crime em Gotham.'],
-      ['Chernobyl','Chernobyl',2019,9.3,'Drama','Minissérie','A história do maior desastre nuclear da história e das pessoas que se sacrificaram para conter suas consequências.'],
-      ['Euphoria','Euphoria',2019,8.3,'Drama','2 temporadas','Um grupo de adolescentes lida com drogas, sexo, identidade e redes sociais enquanto tenta descobrir quem é.'],
-      ['The Pitt','The Pitt',2025,8.8,'Drama','1 temporada','Um plantão de 15 horas no pronto-socorro de Pittsburgh, contado hora a hora pelos médicos que tentam salvar vidas no limite.'],
-      ['Hacks','Hacks',2021,8.2,'Comédia,Drama','4 temporadas','Uma lenda da comédia de Las Vegas e uma jovem roteirista sem papas na língua formam uma parceria tão conflituosa quanto brilhante.']
-    ]
-  },
-  apple:{
-    movie:[
-      ['Assassinos da Lua das Flores','Killers of the Flower Moon',2023,7.6,'Crime,Drama','3h 26min','Nos anos 1920, membros da nação Osage são assassinados um a um após a descoberta de petróleo em suas terras.'],
-      ['F1: O Filme','F1',2025,7.7,'Ação,Drama','2h 35min','Um piloto veterano volta à Fórmula 1 para ajudar uma equipe em crise e treinar um jovem talento cheio de si.'],
-      ['No Ritmo do Coração','CODA',2021,8.0,'Drama','1h 51min','Única pessoa que ouve numa família surda, uma adolescente divide-se entre ajudar no barco de pesca da família e seguir o sonho de cantar.'],
-      ['Napoleão','Napoleon',2023,6.4,'Drama,Guerra','2h 38min','A ascensão e a queda de Napoleão Bonaparte, contadas por meio de suas batalhas e da relação intensa com Josefina.'],
-      ['Lobos','Wolfs',2024,6.5,'Ação,Comédia','1h 48min','Dois "faxineiros" profissionais de crimes são contratados para o mesmo serviço e precisam trabalhar juntos numa noite que sai do controle.'],
-      ['Greyhound: Na Mira do Inimigo','Greyhound',2020,7.0,'Guerra,Ação','1h 31min','Na Segunda Guerra, um comandante em sua primeira missão protege um comboio aliado de submarinos alemães no Atlântico.'],
-      ['Como Vender a Lua','Fly Me to the Moon',2024,6.6,'Comédia,Romance','2h 12min','Uma especialista em marketing é contratada para melhorar a imagem da NASA e acaba encarregada de criar um pouso falso na Lua, por precaução.'],
-      ['Argylle: O Superespião','Argylle',2024,5.8,'Ação,Comédia','2h 19min','Uma escritora de livros de espionagem descobre que suas histórias estão se tornando reais — e que ela virou alvo.'],
-      ['Finch','Finch',2021,6.9,'Ficção científica,Drama','1h 55min','Num mundo devastado, um inventor doente constrói um robô para cuidar de seu cachorro quando ele não estiver mais lá.'],
-      ['Wolfwalkers','Wolfwalkers',2020,8.0,'Animação,Aventura','1h 43min','Na Irlanda do século XVII, uma jovem aprendiz de caçadora faz amizade com uma menina que se transforma em lobo.']
-    ],
-    tv:[
-      ['Ruptura','Severance',2022,8.7,'Ficção científica,Suspense','2 temporadas','Funcionários de uma empresa misteriosa passam por um procedimento que separa as memórias do trabalho das da vida pessoal.'],
-      ['Ted Lasso','Ted Lasso',2020,8.8,'Comédia,Drama','3 temporadas','Um técnico de futebol americano é contratado para treinar um time de futebol inglês — sem entender nada do esporte.'],
-      ['The Morning Show','The Morning Show',2019,8.2,'Drama','4 temporadas','Os bastidores de um telejornal matinal de sucesso, abalado por escândalos, disputas de ego e lutas por poder.'],
-      ['Slow Horses','Slow Horses',2022,8.2,'Suspense,Drama','5 temporadas','Agentes do MI5 rebaixados por erros de carreira são jogados num departamento esquecido — e acabam no centro de casos perigosos.'],
-      ['Silo','Silo',2023,8.1,'Ficção científica,Mistério','2 temporadas','Milhares de pessoas vivem num silo subterrâneo gigante, sem saber por que o mundo lá fora se tornou proibido.'],
-      ['Pachinko','Pachinko',2022,8.4,'Drama','2 temporadas','A saga de quatro gerações de uma família coreana imigrante, da Coreia ocupada ao Japão e aos EUA.'],
-      ['O Estúdio','The Studio',2025,8.1,'Comédia','1 temporada','O novo chefe de um estúdio de Hollywood tenta equilibrar a paixão pelo cinema com a pressão por lucro.'],
-      ['Fundação','Foundation',2021,7.6,'Ficção científica,Drama','3 temporadas','Um matemático prevê a queda do Império Galáctico e cria um plano para salvar o conhecimento humano.'],
-      ['Para Toda a Humanidade','For All Mankind',2019,8.1,'Ficção científica,Drama','4 temporadas','E se a União Soviética tivesse chegado à Lua primeiro? Uma história alternativa da corrida espacial.'],
-      ['Falando a Real','Shrinking',2023,8.1,'Comédia,Drama','2 temporadas','Um terapeuta em luto passa a dizer exatamente o que pensa aos pacientes — e mexe com a vida de todos, inclusive a dele.']
-    ]
-  },
-  paramount:{
-    movie:[
-      ['Top Gun: Maverick','Top Gun: Maverick',2022,8.2,'Ação,Drama','2h 10min','Após mais de 30 anos de serviço, Maverick volta à escola Top Gun para treinar uma nova geração de pilotos numa missão quase impossível.'],
-      ['O Poderoso Chefão','The Godfather',1972,9.2,'Crime,Drama','2h 55min','O patriarca de uma família da máfia transfere o controle de seu império ao filho relutante.'],
-      ['Um Lugar Silencioso','A Quiet Place',2018,7.5,'Terror,Ficção científica','1h 30min','Uma família sobrevive em silêncio absoluto num mundo dominado por criaturas que caçam pelo som.'],
-      ['Missão: Impossível – Acerto de Contas Parte 1','Mission: Impossible - Dead Reckoning Part One',2023,7.6,'Ação,Aventura','2h 43min','Ethan Hunt e sua equipe correm contra o tempo para encontrar uma arma capaz de ameaçar toda a humanidade.'],
-      ['Gladiador II','Gladiator II',2024,6.5,'Ação,Drama','2h 28min','Anos após a morte de Maximus, Lúcio é forçado a lutar no Coliseu e busca no passado a força para devolver a glória a Roma.'],
-      ['Sorria','Smile',2022,6.5,'Terror,Mistério','1h 55min','Depois de presenciar um incidente traumático, uma psiquiatra passa a ser perseguida por uma entidade com um sorriso aterrorizante.'],
-      ['Sonic 3: O Filme','Sonic the Hedgehog 3',2024,7.0,'Ação,Comédia','1h 50min','Sonic, Knuckles e Tails enfrentam Shadow, um novo e poderoso inimigo, e precisam formar uma aliança improvável.'],
-      ['Transformers: O Início','Transformers One',2024,7.6,'Animação,Ação','1h 44min','A origem de Optimus Prime e Megatron, quando ainda eram amigos inseparáveis em Cybertron.'],
-      ['Pânico VI','Scream VI',2023,6.4,'Terror,Mistério','2h 3min','Os sobreviventes dos ataques de Ghostface deixam Woodsboro e recomeçam em Nova York — mas o assassino vai atrás deles.'],
-      ['Bob Marley: One Love','Bob Marley: One Love',2024,6.3,'Drama','1h 47min','A trajetória de Bob Marley e a criação do álbum que levou o reggae e sua mensagem de paz para o mundo.']
-    ],
-    tv:[
-      ['Yellowstone','Yellowstone',2018,8.6,'Drama','5 temporadas','O patriarca de uma família de fazendeiros luta para proteger o maior rancho dos EUA de investidores, reservas indígenas e do governo.'],
-      ['1923','1923',2022,8.3,'Drama','2 temporadas','Uma nova geração da família Dutton enfrenta seca, guerra e a Grande Depressão em Montana.'],
-      ['Tulsa King','Tulsa King',2022,7.9,'Crime,Drama','3 temporadas','Depois de 25 anos na prisão, um mafioso de Nova York é mandado para Tulsa e decide montar seu próprio império.'],
-      ['Landman','Landman',2024,8.1,'Drama','2 temporadas','Nos campos de petróleo do oeste do Texas, um negociador de terras vive entre trabalhadores braçais e bilionários.'],
-      ['Yellowjackets','Yellowjackets',2021,7.8,'Terror,Mistério','3 temporadas','Um time feminino de futebol sobrevive a um acidente aéreo na selva — e, 25 anos depois, o que aconteceu lá volta para assombrá-las.'],
-      ['Operação Lioness','Special Ops: Lioness',2023,7.5,'Ação,Suspense','2 temporadas','A CIA infiltra uma fuzileira naval no círculo de uma família ligada ao terrorismo, numa missão de altíssimo risco.'],
-      ['Dexter: Pecado Original','Dexter: Original Sin',2024,8.0,'Crime,Suspense','1 temporada','Em Miami, 1991, o jovem Dexter Morgan dá os primeiros passos como serial killer enquanto começa a trabalhar na polícia.'],
-      ['Mayor of Kingstown','Mayor of Kingstown',2021,8.2,'Crime,Drama','4 temporadas','Numa cidade onde a prisão é o maior negócio, uma família tenta manter a ordem entre criminosos, policiais e políticos.'],
-      ['Star Trek: Strange New Worlds','Star Trek: Strange New Worlds',2022,8.2,'Ficção científica,Aventura','3 temporadas','O capitão Pike e a tripulação da Enterprise exploram novos mundos, anos antes da era do capitão Kirk.'],
-      ['Halo','Halo',2022,7.1,'Ação,Ficção científica','2 temporadas','No século XXVI, o supersoldado Master Chief lidera a guerra da humanidade contra uma aliança alienígena.']
-    ]
-  }
-};
-
-
-// Imagens oficiais em alta resolução (TMDB) para o modo demonstração: [pôster, fundo horizontal]
-const IMG = {
-  'red-notice-movie':['pe17f8VDfzbvbHSAKAlcORtBHmW.jpg','p34WRcgkN2QIHcds5FtFiSpV3PC.jpg'],
-  'don-t-look-up-movie':['6Sc7Tjt7aPsdghYK32mDMFeZkqJ.jpg','nvxrQQspxmSblCYDtvDAbVFX8Jt.jpg'],
-  'bird-box-movie':['kTHDVXVTT62gJY9WfZnaXdmtvZE.jpg','pDKFL1zcHzEpmz4MJA5JJnRbJeD.jpg'],
-  'the-irishman-movie':['9H1XgBZFoVnh7nSibGWZcJMOL6C.jpg','1RDto0tLo8Fhq7OcwgDaM7nECb7.jpg'],
-  'glass-onion-movie':['zQJcENHbZUpLQ8RKYt9wTzcXCwv.jpg','y3uOfZAYwLkbvhunswBCskNMrfI.jpg'],
-  'extraction-movie':['zxahunlqvMPWzUBd1XSRsGawdS9.jpg','2QSZ4CPd8AoljAL76qM30dFft07.jpg'],
-  'all-quiet-on-the-western-front-movie':['qmcKs0Aoft7MBdBoj1haZyPRgM2.jpg','xBwtP27cx8WfjHJVFkpuV6F1RES.jpg'],
-  'enola-holmes-movie':['riYInlsq2kf1AWoGm80JQW5dLKp.jpg','kMe4TKMDNXTKptQPAdOF0oZHq3V.jpg'],
-  'the-platform-movie':['kY0ET33EoiJhjaPCzzvywCDqP6b.jpg','3tkDMNfM2YuIAJlvGO6rfIzAnfG.jpg'],
-  'roma-movie':['veWGVw33lnifG10fpkz3QmimVaI.jpg','zl9uqCl5iUSb50sTk2BPzw6bJnU.jpg'],
-  'stranger-things-tv':['twfKp60THrcOIep9sjHODOOfO8d.jpg','9P4IIMYY3HifqeruZq0ZZ9g7YUi.jpg'],
-  'squid-game-tv':['6gcHdboppvplmBWxvROc96NJnmm.jpg','2meX1nMdScFOoV4370rqHWKmXhY.jpg'],
-  'the-crown-tv':['ehUMAA3qDR5HNor9DB60g72KNQZ.jpg','8VXhcrl5z2I1zEU9X3pkkNrZlD.jpg'],
-  'baby-reindeer-tv':['5Qsao5QaFFu3BlFgUhB5asp4dzb.jpg','2qLYxCyxf4fim0X5OqM5FjZqWXu.jpg'],
-  'the-queen-s-gambit-tv':['ubWpLTkwcms5PfZJMFZkNXVYXqJ.jpg','ktZaQ4FEmKpRgetiBooZETYQbmQ.jpg'],
-  'saltburn-movie':['zGTfMwG112BC66mpaveVxoWPOaB.jpg','bAtFhmRHp0f6aHqj1UGTZoPcmQo.jpg'],
-  'the-tomorrow-war-movie':['lWQ3hI78Az2RHfzDpEuvougqUz7.jpg','yizL4cEKsVvl17Wc1mGEIrQtM2F.jpg'],
-  'air-movie':['8OGQCOp6BxwvekhZBQCzVd77Y6l.jpg','aT3sRVqgpkyCo23fp9myVfKPWbA.jpg'],
-  'manchester-by-the-sea-movie':['cy7fOIXX0MO2HXnTE3Lf0NwjQfN.jpg','fjk4eE8Ypke4YLv5A3ArDH4GzYH.jpg'],
-  'sound-of-metal-movie':['gjKlQJlWtP61ZN4WKbcSVHzjqq8.jpg','7b5R8FfGUzlxfhOkPpL3xyIeuyF.jpg'],
-  'road-house-movie':['h2xDLj6CtzItwQEFyBjIXh5z3QD.jpg','clFFCapyGpE7KD4Jsu5pUbFBZF4.jpg'],
-  'one-night-in-miami-movie':['izMwtiJk4JaMTnW7UyJIpY1rAvd.jpg','yUyuDacqA0IhWqEbPQPXBsEIbPX.jpg'],
-  'without-remorse-movie':['uHEZ4ZMziIjlAgCTQAEh9ROvtj0.jpg','fPGeS6jgdLovQAKunNHX8l0avCy.jpg'],
-  'borat-subsequent-moviefilm-movie':['h4ciG34AaQLfk38ltBGMDdxLeF5.jpg','hbrXbVoE0NuA1ORoSGGYNASagrl.jpg'],
-  'red-one-movie':['zX2UeAmF8XDBJM3sZ0RS0jLQ8Gg.jpg','rOmUuQEZfPXglwFs5ELLLUDKodL.jpg'],
-  'the-boys-tv':['in1R2dDc421JxsoRWaIIAqVI2KE.jpg','bq28ajZaoMyzEIm6REelqyqtEDZ.jpg'],
-  'fallout-tv':['tQRX6GbYooU7kUaarKf5YXDTONy.jpg','coaPCIqQBPUZsOnJcWZxhaORcDT.jpg'],
-  'reacher-tv':['f1VCQIG2iCyOookdgOzwtUpwWC0.jpg','pF0qkRsrHkdYadPWY9AMeFZfcwk.jpg'],
-  'invincible-tv':['qhb7RWU9ad9a5m3HbeRRXzjaMXf.jpg','9qrroces8C6R9aKr08hACNPVXdZ.jpg'],
-  'the-rings-of-power-tv':['8FPCnfOftiLTHg5wnJxVdtlF8EN.jpg','achmETPRJZc9QVXsMPgHwYEyNar.jpg'],
-  'jack-ryan-tv':['sUQS9Uks2UNdFc1Io2U0ulTDGsr.jpg','2y2TbzeKZHYqTN5gb4nBv9dKk1f.jpg'],
-  'mr-mrs-smith-tv':['83Oqz9KJaK0l58OW3S0Y4Rqi9BE.jpg','5mC90b2FrJMe3Xr26cL0HeWcrvG.jpg'],
-  'inside-out-2-movie':['lHKNS35r4RTa9GO72vdadMLxoiV.jpg','p5ozvmdgsmbWe0H8Xk7Rc8SCwAB.jpg'],
-  'deadpool-wolverine-movie':['cJFqqiDYprqExaXatu4AaoMzDG2.jpg','by8z9Fe8y7p4jo2YlW2SZDnptyT.jpg'],
-  'avatar-the-way-of-water-movie':['hm6nONQOgVpKmRK5YUX9EqfJ0NH.jpg','kJsPVzdyBrYHLomuNv5SJDXUQ2f.jpg'],
-  'poor-things-movie':['iOdcXYSVzBgmBJzNIlIMOZ6fz0F.jpg','zh6IdheEYinU4TPtorWsjx6qPQE.jpg'],
-  'coco-movie':['6oNm06TPz2vGiPc2I52oXW3JwPS.jpg','g7CHF8gTLGooTbP4GznIGwaqAGL.jpg'],
-  'soul-movie':['1G7QNn1sUShae0Rf9k9D99wVFg5.jpg','rQaHA74pevnGsxcKGaoZVGWe9TC.jpg'],
-  'avengers-endgame-movie':['9fRX8UKlIW7Lb9GqNsJVakWWFCi.jpg','7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg'],
-  'free-guy-movie':['bAnms4gJ5YkZzZCDkHsRKxEg2Xj.jpg','rOJb0yQOCny0bPjg8bCLw8DyAD7.jpg'],
-  'encanto-movie':['nUG2CEEYbuvaARFUdyWXAIvM8RR.jpg','3G1Q5xF40HkUBJXxt2DQgQzKTp5.jpg'],
-  'luca-movie':['25Sju0ajhfZfIGHMLx83W2y3Arf.jpg','620hnMVLu6RSZW6a5rwO8gqpt0t.jpg'],
-  'the-bear-tv':['tAJYUFaWot3jn5vtDUoxNNIw9aF.jpg','aJtG4txtmiRHwAAqENQHZvBs6kY.jpg'],
-  'shogun-tv':['gaOb9hyCDUcbZiTYcHy7mIFmNo.jpg','bwSmgmd90hCWwqOKQYTEraeOZhJ.jpg'],
-  'the-mandalorian-tv':['sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg','9zcbqSxdsRMZWHYtyCd1nXPr2xq.jpg'],
-  'loki-tv':['2TwPJfPiBI2lVrofggw3H0b4cDC.jpg','q3jHCb4dMfYF6ojikKuHd6LscxC.jpg'],
-  'only-murders-in-the-building-tv':['8uYitjfCqJLdehIj0Q6RcMfyI8V.jpg','WCnEPf4ZNPjszndmrFlDxZ5Uvd.jpg'],
-  'abbott-elementary-tv':['zk2aNVIHoapdWKOcaYp7PhX9SxD.jpg','s3owzvmihtDrunVxB2DyGjn9iJt.jpg'],
-  'american-horror-story-tv':['yCkPLQ10qKIUgRBXmQVVMF1h96d.jpg','5G4Bnc4Q0YUK1bwLEUYmIsmm2Ib.jpg'],
-  'wednesday-tv':['7rxiQrZjrer0RB9qNA8rHYFo53R.jpg','iHSwvRVsRyxpX7FE7GbviaDvgGZ.jpg'],
-  'dark-tv':['gw8ZlIXEg6SIx3FgMEQqmBkPYKV.jpg','3jDXL4Xvj3AzDOF6UH1xeyHW8MH.jpg'],
-  'money-heist-tv':['k8ytNZ32uf4JtrtpfIw54MD0oZX.jpg','xGexTKCJDkl12dTW4YCBDXWb1AD.jpg'],
-  'ozark-tv':['epUO5w9nRmozR0iWCFwChT3ha6j.jpg','aatG9iVAUL7U7OyFEmupESpOrD2.jpg'],
-  'black-mirror-tv':['aCTL24B8ZuiI2osMwoUI5rqBXoF.jpg','dg3OindVAGZBjlT3xYKqIAdukPL.jpg'],
-  'fleabag-tv':['vFn0nLPcIggPH5LTWWaJ2hcsGlc.jpg','hXdQ4MWsEOX6qg6VydKrLb3YJ4g.jpg'],
-  'good-omens-tv':['43nc7lgrrQIbZQl2NbtWwziQfUd.jpg','dQCKc5NKeKOGAQusk2FdctGB9k5.jpg'],
-  'the-marvelous-mrs-maisel-tv':['i61vpsczXOfrDbkdyVHo6nSmVfQ.jpg','vQ77kC1amsZECKIxkUIsMJCtBVp.jpg'],
-  'andor-tv':['yX8c3bXKzAquEKQ75eQslnodskK.jpg','quCeAmVQHfsdcYkicbxZWVauCVb.jpg'],
-  'wandavision-tv':['8mAyDNSCZDiejPTm4lwgbztut7y.jpg','lOr9NKxh4vMweufMOUDJjJhCRHW.jpg'],
-  'percy-jackson-and-the-olympians-tv':['4sLiVmCiRiX9abW4niJyNZx15bK.jpg','sAxx25ijwYQ8xsT56wu2IzvIRss.jpg'],
-  'dune-part-two-movie':['VMy4UGsI2u3f4fALGeCqCdsQBb.jpg','eZ239CUp1d6OryZEBPnO2n87gMG.jpg'],
-  'joker-movie':['xLxgVxFWvb9hhUyCDDXxRPPnFck.jpg','rlay2M5QYvi6igbGcFjq8jxeusY.jpg'],
-  'the-batman-movie':['wd7b4Nv9QBHDTIjc2m7sr0IUMoh.jpg','rvtdN5XkWAfGX6xDuPL6yYS2seK.jpg'],
-  'barbie-movie':['pP12F7Gutn6CpHYaIPBlDRHlMlk.jpg','1esAE8sLJRWWFsLLeh5r3g2WanI.jpg'],
-  'sinners-movie':['v0Ljeti537c6cNKweuEN0iaU3x4.jpg','nAxGnGHOsfzufThz20zgmRwKur3.jpg'],
-  'interstellar-movie':['tR1XVa5bxgdh2bRw2u0DzrgkO2l.jpg','8sNiAPPYU14PUepFNeSNGUTiHW.jpg'],
-  'the-conjuring-movie':['1NxHKZW5DPbUFtbF3MxbdSyxRqU.jpg','ecKQlAEG95k62SMGhvX83oEqANK.jpg'],
-  'furiosa-a-mad-max-saga-movie':['7qOSKoOAPgemYhBwbJgBWcCxPWZ.jpg','raph7qjAGTMXaIjVxt6ZDSXRzUr.jpg'],
-  'wonka-movie':['uQWEomz2wLoijrvoFaJt2gUMXRu.jpg','uIk2g2bRkNwNywKZIhC5oIU94Kh.jpg'],
-  'godzilla-x-kong-the-new-empire-movie':['fWSGD2yrzz6hscocnMD8AEXIThk.jpg','gvLG3Fnznkxl4SmYfcK8gUuqxM8.jpg'],
-  'the-last-of-us-tv':['qWo5TP7mBijoZrfxBJkUMctkBt0.jpg','lY2DhbA7Hy44fAKddr06UrXWWaQ.jpg'],
-  'house-of-the-dragon-tv':['oKJDm4QCKbp6mR4FnxXrFlPJP8Y.jpg','577eXC8wFQT0eUrJcgznSiFPRmk.jpg'],
-  'game-of-thrones-tv':['aqomTRKjNZkmNEeOZnEmWrFTmKU.jpg','zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg'],
-  'succession-tv':['z0XiwdrCQ9yVIr4O0pxzaAYRxdW.jpg','d87JXX3DLkRJMfm5StCmmnmhHuX.jpg'],
-  'the-white-lotus-tv':['sQ35C3pjM8xCBT87xI90DuzizZD.jpg','qVBIAcZkK5j6WRq7JehJcOMbdgb.jpg'],
-  'the-penguin-tv':['pPUNmQZUh7h6w2423VvtzUeg1LD.jpg','4TdmuuwiIiKw3JOjIuhdgYxRXnN.jpg'],
-  'chernobyl-tv':['hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg','900tHlUYUkp7Ol04XFSoAaEIXcT.jpg'],
-  'euphoria-tv':['cQMOyNLS1RsQIMlmVR6MEk2fvii.jpg','mez2Z3WqlPKNXpi7mWoiiE5guE9.jpg'],
-  'the-pitt-tv':['kvFSpESyBZMjaeOJDx7RS3P1jey.jpg','z3BkMbCy5ajZPMyKEUwsPHuz2cV.jpg'],
-  'hacks-tv':['73vn8TdBZDp5o4AztOGhQRYeGIR.jpg','bbAR4qKxjnjyKAt4YMrL725Mtfw.jpg'],
-  'killers-of-the-flower-moon-movie':['kBLMPD5BCmcrHKIhjZ86uWHZG5K.jpg','jwjCWMPWSQ7h3sqG4mqI7pMEZu0.jpg'],
-  'f1-movie':['fMcY5hpVZQ0cLKHvFM1mo6GrAr0.jpg','lkDYN0whyE82mcM20rwtwjbniKF.jpg'],
-  'coda-movie':['fXeWSHLlAEsINva6SJgb5hCLBzy.jpg','v85FlkbMYKa5du1glm0YfYNsL2n.jpg'],
-  'napoleon-movie':['2UY2xfkgw9EgOOyA7ro3eyGJ9V9.jpg','33pMXav77ICRnceEBLhL8lXTywv.jpg'],
-  'wolfs-movie':['5LvefZZsapIsOIckLZHbYlwCAkm.jpg','nSVwus6Vcnw06zqKAa1ioacrpUF.jpg'],
-  'greyhound-movie':['5l1DwjqjZVJzv4ecE2yPnXIIU3C.jpg','xXBnM6uSTk6qqCf0SRZKXcga9Ba.jpg'],
-  'fly-me-to-the-moon-movie':['vGLp898JntN7s5KABbiJ7PCS3ZL.jpg','4ItXEyVPj6wb9AdhsltcqYE6f5f.jpg'],
-  'argylle-movie':['1ojCiMpYmCciIFuEcgLOOGLbUND.jpg','mY3CRicUMaX3Btxv8yspud75UJu.jpg'],
-  'finch-movie':['eEJtzD1F05xDipFEDY98CTH5yZn.jpg','uoc358GH6Yl7TufbUKHkETPu64B.jpg'],
-  'wolfwalkers-movie':['gCa0yDjBb6zHgy2dhbud9mfsTLK.jpg','3zTbERSBLh7waK9811RTKGAcG86.jpg'],
-  'severance-tv':['3DjOAUBR8Hra4R9kK9U8jDaoqyC.jpg','ixgFmf1X59PUZam2qbAfskx2gQr.jpg'],
-  'ted-lasso-tv':['uRHsiw1wLxPHFXkkv4Ix1s0O6f4.jpg','4bG49jVR7NrCNQjahDUsDqvIwle.jpg'],
-  'the-morning-show-tv':['y9x2R87yt2U616736NJrP0d56dt.jpg','uMsTtNaUEWOE2q64m8zthBIMgen.jpg'],
-  'slow-horses-tv':['rdNvIaPXpkUZl5tQLsTP15osfu2.jpg','gPQppUnLx9vqPDLz3WwZ2HJsNbt.jpg'],
-  'silo-tv':['tVR4q9FazxJuCEpaYxiCijUlvM3.jpg','4XccmjsOmQZw8S2iW1wvlvmb5v1.jpg'],
-  'pachinko-tv':['wUTXdmL6oNjhiStGveOaPeuFOYQ.jpg','vVKlL4HyrQYAcJuaaUW49FrRqY5.jpg'],
-  'the-studio-tv':['7Qlpnaj2aBSfLZ1e99ee7J8JogV.jpg','qqqo3P0txcP5ES3ZQ7YR4SmUwam.jpg'],
-  'foundation-tv':['6qRIQqWwnxVemvvDfFuK3kkIqpS.jpg','7NNNXo0qG2SqH4JoG7GPvJ2hzes.jpg'],
-  'for-all-mankind-tv':['JP3DItWMbrrLiKR5AYUfpsNf2b.jpg','9OQ5BIITkJwRJo9JA6AlCfJIGBQ.jpg'],
-  'shrinking-tv':['oaYi4n3pgBLeQ6FH3SU8G3XcSqq.jpg','hI9z1UuNhBthvkm3iJ8m3zv43Pf.jpg'],
-  'top-gun-maverick-movie':['kPbuLGVSJHATkW9fX9L3h1wM0Pa.jpg','AaV1YIdWKnjAIAOe8UUKBFm327v.jpg'],
-  'the-godfather-movie':['wOMxE93W6KcZTuCeNUByNTSaLLt.jpg','ejdD20cdHNFAYAN2DlqPToXKyzx.jpg'],
-  'a-quiet-place-movie':['jk1LYcbiuUr0tv37cVcmp4u9KcN.jpg','nHRUtBwFNnNN70vcQ7lAsjc2T6S.jpg'],
-  'mission-impossible-dead-reckoning-part-one-movie':['hBKxN5Z8gRo2am0whMeQlPv19K4.jpg','628Dep6AxEtDxjZoGP78TsOxYbK.jpg'],
-  'gladiator-ii-movie':['342bly9MqveL65TnEFzx8TTUxcL.jpg','tOqIwliWMovSIZ9DyvHcHI7p2im.jpg'],
-  'smile-movie':['3LfJ1kQZv6OX687rJMOAMzFJlc9.jpg','kMZIMqEXO5MFd5Y1Ha2jZZF4pvF.jpg'],
-  'sonic-the-hedgehog-3-movie':['tfM1T6tAivjvy0sLwt6Y9WvlmzB.jpg','zOpe0eHsq0A2NvNyBbtT6sj53qV.jpg'],
-  'transformers-one-movie':['9yPuNAZQd5m5iKpQV2MDAfcwW9N.jpg','cMfokHWle5lfCreoV08cbmkKv6G.jpg'],
-  'scream-vi-movie':['aKmjs235LlPInyqhITgCHbSTacf.jpg','k6ANeyxAfMRi5xhxIXv1Scn9vc2.jpg'],
-  'bob-marley-one-love-movie':['7RXyg2jBgItk0wG5eNbYHb23qXt.jpg','lHPap2xBR7DgWLiu6RsfKESgzAi.jpg'],
-  'yellowstone-tv':['rrOYi7Zj2OmBojo1VuuZM129gic.jpg','ynSOcgDLZfdLCZfRSYZGiTgYJVo.jpg'],
-  '1923-tv':['t2BpkYRH8GRX9sSDirXQGPz58aG.jpg','vIioWssbxRtEkIzgj8r0pCWYkYM.jpg'],
-  'tulsa-king-tv':['rOYLWCdAifpUtPlTf1WHxyaxeMt.jpg','mNHRGO1gFpR2CYZdANe72kcKq7G.jpg'],
-  'landman-tv':['hYthRgS1nvQkGILn9YmqsF8kSk6.jpg','mh2UczqEXJJVgqohbyZbHTuxwhL.jpg'],
-  'yellowjackets-tv':['xRnGrn7Z7SC0KIBodocoU1QgDZF.jpg','ibFWJDWS8cTO6s2vZVd2uKDm8p.jpg'],
-  'special-ops-lioness-tv':['5OeI0zcsoux6VNNQzGjvDO11gHA.jpg','mU7l9UaEItxHbg2YBNs0sHjoFVY.jpg'],
-  'dexter-original-sin-tv':['w1iM0vkMz9XVCH1ZBiU3m1288G5.jpg','7f2bZ9TdBOlnKpdiir8xWDv6yOi.jpg'],
-  'mayor-of-kingstown-tv':['aoZm9TTbxHfexecDoEiiYWvft3p.jpg','39bifj2FNytJ2m1cqOBcWMTKgmV.jpg'],
-  'star-trek-strange-new-worlds-tv':['bxuUbcM9GqvmQY1EDm5sMtLdcTv.jpg','fZJs6xgU9dqIg9phIXjZAZOInzy.jpg'],
-  'halo-tv':['4UmNhZCEu8Vt3byMvNxNEPyf8EY.jpg','zW0v2YT74C6tRafzqqBkfSqLAN0.jpg']
-};
 
 /* ================= Configuração =================
    Cole aqui as chaves para valerem para todos os usuários (cada usuário também pode informar no Perfil).
@@ -734,13 +454,7 @@ const DAY = NOW.getFullYear()*10000 + (NOW.getMonth()+1)*100 + NOW.getDate();
 const dateShort = NOW.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
 const dateLong = NOW.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
 
-const D = [];
-for (const p in RAW) for (const type in RAW[p]) RAW[p][type].forEach(([t,o,y,imdb,g,dur,s]) =>
-  {
-    const id = slug(o)+'-'+type, im = IMG[id];
-    D.push({ id, t, o, y, iscore: imdb, g: g.split(','), dur, s, p, type, img: im ? { p: '/' + im[0], b: '/' + im[1] } : null });
-  });
-const items = new Map(D.map(x => [x.id, x]));
+const items = new Map();
 
 const state = {
   type: store.get('type','movie'),
@@ -902,26 +616,13 @@ async function loadLive(type){
   return state.data[type] = { tops, pool: pool.length ? pool : Object.values(tops).flat() };
 }
 
-/* ================= Dados de exemplo ================= */
-// Ranking diário: base na nota + variação do dia
-const topList = (p, type) => D.filter(x => x.p === p && x.type === type)
-  .map(x => ({ x, k: val(x) + rng(DAY + hash(x.id))() * 1.8 }))
-  .sort((a, b) => b.k - a.k).map(o => o.x);
-function demoData(type){
-  const tops = {};
-  for (const k in PLATFORMS) tops[k] = topList(k, type);
-  let pool = D.filter(x => x.type === type);
-  const pf = state.profile.platforms;
-  if (pf.length) { const f = pool.filter(x => pf.includes(x.p)); if (f.length) pool = f; }
-  return { tops, pool };
-}
 /* ================= Dados reais do dia =================
    data.json é gerado todo dia pelo GitHub Actions (scripts/build-data.mjs) com a chave guardada em segredo. */
 const fromDaily = r => ({
   id: r.id, tid: +r.id.slice(1), type: r.type, live: true, full: true,
   t: r.t, o: r.o, y: r.y, tscore: r.ts, vc: r.vc, pop: r.pop, iscore: r.ir || 0, imdbId: r.imdb,
   gids: r.g, g: r.g.map(i => GENRE_NAMES[i]).filter(Boolean).slice(0, 3),
-  s: r.s || 'Sinopse ainda não disponível em português.', p: r.p, ps: r.ps, dur: r.dur,
+  s: r.s || '', p: r.p, ps: r.ps, dur: r.dur,
   img: { p: r.img[0], b: r.img[1] }
 });
 async function loadDaily(){
@@ -930,8 +631,19 @@ async function loadDaily(){
     if (!r.ok) return null;
     const j = await r.json();
     j.items.forEach(r => items.set(r.id, fromDaily(r)));
+    loadSynopses();
     return j;
   } catch { return null; }
+}
+// sinopses chegam depois da página inicial (arquivo à parte, metade do peso dos dados)
+let synReady = false;
+async function loadSynopses(){
+  try {
+    const syn = await (await fetch('syn.json', { cache: 'no-cache' })).json();
+    for (const id in syn) { const x = items.get(id); if (x && !x.s) x.s = syn[id]; }
+  } catch {}
+  synReady = true;
+  if ($('#detail').classList.contains('on') && state.detailId) { const el = $('#detail'), st = el.scrollTop; renderDetail(getItem(state.detailId)); el.scrollTop = st; }
 }
 // título que saiu da lista do dia (link antigo): os dados ficam guardados em t/<id>.json por 120 dias
 async function loadArchived(id){
@@ -944,7 +656,7 @@ async function loadArchived(id){
     return x;
   } catch { return null; }
 }
-const catalog = () => state.daily ? state.daily.items.map(r => items.get(r.id)) : D;
+const catalog = () => state.daily ? state.daily.items.map(r => items.get(r.id)) : [];
 const realData = () => !!state.daily || state.live;
 // mostra a plataforma que o usuário assina, quando o título está em mais de uma
 const preferMine = x => { const pf = state.profile.platforms; if (x.ps && pf.length && !pf.includes(x.p)) x.p = x.ps.find(k => pf.includes(k)) || x.p; return x; };
@@ -960,17 +672,37 @@ function dailyData(type){
   pool.forEach(preferMine);
   return { tops, pool: pool.length ? pool : Object.values(tops).flat() };
 }
+// sem os dados do dia não mostramos nada inventado: a tela avisa e oferece tentar de novo
 async function getData(type){
   if (state.daily) return dailyData(type);
-  if (!state.live) return demoData(type);
+  if (!state.live) return null;
   try { return await loadLive(type); }
   catch (err) {
-    state.live = false;
-    renderDrawer();
-    toast(err.message === 'auth' ? 'Chave TMDB inválida · mostrando exemplos' : 'Sem conexão com o TMDB · mostrando exemplos');
-    return demoData(type);
+    if (err.message === 'auth') toast('Chave TMDB inválida');
+    return null;
   }
 }
+function renderOffline(){
+  $('#hero').innerHTML = `<div class="hero-bg"></div><div class="veil"></div>
+    <div class="hero-content offline">
+      <h1>Sem conexão</h1>
+      <p class="reason">Não conseguimos carregar a recomendação de hoje. Confira sua internet e tente de novo.</p>
+      <div class="actions" style="display:flex"><button class="btn btn-primary" data-retry>Tentar de novo</button></div>
+    </div>`;
+  $('#tops').innerHTML = '';
+}
+let retrying = false;
+async function retryLoad(){
+  if (retrying) return;
+  retrying = true;
+  heroSkeleton(); topsSkeleton();
+  state.daily = await loadDaily();
+  state.live = !state.daily && !!tmdbKey();
+  retrying = false;
+  renderDrawer();
+  refresh();
+}
+addEventListener('online', () => { if (!state.daily && !state.live) retryLoad(); });
 
 /* ================= Recomendação do dia ================= */
 const isWatched = id => !!state.watched[id];
@@ -1035,7 +767,7 @@ function renderHero(x, m, like){
     <div class="hero-content swap">
       <span class="eyebrow glass"><span class="dot"></span>Recomendação de hoje · ${dateShort}</span>
       <span class="kick">Hoje pra você</span>
-      <h1>${esc(x.t)}</h1>
+      <h1><span data-open="${x.id}">${esc(x.t)}</span></h1>
       <div class="mrow"><div class="meta">${pfBadge(x)}${imdbBadge(x)}<span>${esc(x.y)}</span>${x.dur ? `<span class="sep">•</span><span class="mdur">${esc(x.dur)}</span>` : ''}</div>
         <button class="more glass" data-more aria-label="Mais opções" aria-expanded="false"><span class="o">${I.dots}</span><span class="c">${I.x}</span></button>
         <div class="hmenu glass" role="menu">
@@ -1100,6 +832,7 @@ async function refresh(){
   if (firstLoad) { heroSkeleton(); topsSkeleton(); }
   const data = await getData(state.type);
   if (my !== refreshTok) return;
+  if (!data) return renderOffline();
   renderTops(data);
   const sel = todayPick(data.pool);
   if (!sel) return;
@@ -1130,7 +863,6 @@ function renderDrawer(){
       : `<button class="join glass" data-join><b>Crie seu perfil grátis</b><small>Guarde seu histórico e sua lista</small></button>`}
     <div class="drawer-foot">
       ${pr.genres.length ? `Seus gêneros<div class="chips">${chips(pr.genres)}</div>` : ''}
-      ${state.daily || state.live ? '' : 'Modo demonstração · dados de exemplo'}
     </div>`;
 }
 
@@ -1165,7 +897,7 @@ function renderDetail(x){
         <div class="fact"><small>${x.type === 'movie' ? 'Duração' : 'Formato'}</small><b style="font-size:13px">${esc(x.dur || (pending ? '…' : '—'))}</b></div>
       </div>
       ${x.g.length ? `<div class="d-sec"><h4>Categoria</h4><div class="chips">${chips(x.g)}</div></div>` : ''}
-      <div class="d-sec"><h4>Sinopse</h4><p class="syn">${esc(x.s)}</p></div>
+      <div class="d-sec"><h4>Sinopse</h4>${x.s ? `<p class="syn">${esc(x.s)}</p>` : state.daily && !synReady ? skLines(100, 92, 60) : '<p class="syn">Sinopse ainda não disponível em português.</p>'}</div>
       <div class="actions">
         <a class="btn btn-primary" href="${watch}" target="_blank" rel="noopener">${I.play}${P ? `Assistir ${P.prep} ${P.name}` : 'Ver onde assistir'}</a>
         <button class="round glass${isWatched(x.id) ? ' seen' : ''}" data-watched="${x.id}" aria-label="Já assisti">${I.seen}</button>
@@ -1266,7 +998,7 @@ function renderSearch(){
       return;
     }
     if (!state.live) {
-      body.innerHTML = genreChips() + `<div class="label">Mais bem avaliados</div>` + [...D].sort((a, b) => val(b) - val(a)).slice(0, 8).map(resRow).join('');
+      body.innerHTML = emptyBox('Sem conexão', 'Confira sua internet e tente de novo.');
       return;
     }
     body.innerHTML = genreChips() + `<div class="label">Em alta hoje</div>` + loadingRows();
@@ -1298,7 +1030,7 @@ async function searchGenre(g){
     return showList(`${tipo} de ${g}${pf.length ? ' nas suas plataformas' : ''}`, catalog()
       .filter(x => x.type === state.type && matchGenre(x, g) && (!pf.length || x.ps.some(k => pf.includes(k)))).slice(0, 40).map(preferMine));
   }
-  if (!state.live) return showList(g, D.filter(x => x.g.includes(g)).sort((a, b) => val(b) - val(a)));
+  if (!state.live) return showList(g, []);
   $('#searchBody').innerHTML = loadingRows();
   try {
     const j = await tmdb(`/discover/${state.type}`, { ...streamBR, with_watch_providers: userProviders(), with_genres: GENRE_IDS[g][state.type].join('|'), sort_by: 'popularity.desc', 'vote_count.gte': '100' });
@@ -1341,10 +1073,11 @@ function closeMenu(){
   const hm = $('.hero-content.menu-on');
   if (!hm) return;
   hm.classList.remove('menu-on'); hm.querySelector('[data-more]').setAttribute('aria-expanded', 'false');
+  focusBack();
   unlockPage();
 }
 function openLayer(el){
-  if (!state.layers.includes(el)) state.layers.push(el);
+  if (!state.layers.includes(el)) { state.layers.push(el); focusInto(el); }
   el.classList.add('on');
   if (el.id === 'drawer') $('#scrim').classList.add('on');
   lockPage();
@@ -1352,6 +1085,7 @@ function openLayer(el){
 function closeLayer(el = state.layers[state.layers.length - 1]){
   if (!el) return;
   el.classList.remove('on');
+  if (state.layers.includes(el)) focusBack();
   state.layers = state.layers.filter(l => l !== el);
   if (el.id === 'drawer') $('#scrim').classList.remove('on');
   unlockPage();
@@ -1397,11 +1131,13 @@ async function openShared(){
 /* ---------- Modal de vidro ---------- */
 function openModal(html){
   const m = $('#modal');
+  if (!modalOpen()) focusInto(m);
   m.innerHTML = `<div class="mcard glass">${html}</div>`;
   m.classList.add('on');
   lockPage();
 }
 function closeModal(){
+  if (modalOpen()) focusBack();
   $('#modal').classList.remove('on');
   unlockPage();
 }
@@ -1462,6 +1198,7 @@ try { invited = !!sessionStorage.getItem('oqvh_invite'); } catch {}
 function inviteSignup(force){
   if (!force && (invited || signedIn() || modalOpen())) return;
   invited = true;
+  initAccounts(); // já deixa o login pronto para o botão do convite
   try { sessionStorage.setItem('oqvh_invite', '1'); } catch {}
   openModal(`<div class="micon">${I.play}</div>
     <h3>Antes de ir, salve sua jornada 🍿</h3>
@@ -1524,7 +1261,7 @@ function syncSeg(){
 function saveProfile(){
   const sel = id => [...document.querySelectorAll(`#${id} .chip.on`)].map(c => c.dataset.chip);
   const tasteOf = p => JSON.stringify([p.genres, p.platforms]), before = tasteOf(state.profile);
-  state.profile = {
+  state.profile = { ...state.profile,
     name: $('#f-name').value.trim(), email: $('#f-email').value.trim(), birth: $('#f-birth').value,
     genres: sel('f-genres'), platforms: sel('f-pf'), tmdb: $('#f-tmdb')?.value.trim() ?? state.profile.tmdb, omdb: $('#f-omdb')?.value.trim() ?? state.profile.omdb
   };
@@ -1546,7 +1283,7 @@ document.addEventListener('click', e => {
   // menu ⋯ da recomendação: tocar fora só fecha o menu
   const hm = document.querySelector('.hero-content.menu-on');
   if (hm && !t.closest('.hmenu')) return closeMenu();
-  if (t.closest('[data-more]')) { t.closest('.hero-content').classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); lockPage(); return; }
+  if (t.closest('[data-more]')) { focusInto(t.closest('.mrow').querySelector('.hmenu')); t.closest('.hero-content').classList.add('menu-on'); t.closest('[data-more]').setAttribute('aria-expanded', 'true'); lockPage(); return; }
   if (t.closest('.hmenu')) closeMenu();
   if ((el = t.closest('[data-type]'))) return setType(el.dataset.type);
   if (modalOpen() && t.id === 'modal') return closeModal();
@@ -1569,13 +1306,48 @@ document.addEventListener('click', e => {
   if ((el = t.closest('[data-genre]'))) return searchGenre(el.dataset.genre);
   if (t.closest('[data-close]')) return closeLayer(t.closest('.sheet,.page'));
   if (t.closest('[data-saveprofile]')) return saveProfile();
+  if (t.closest('[data-retry]')) return retryLoad();
   if (t.closest('[data-totops]')) return $('#tops').scrollIntoView({ behavior: 'smooth' });
-  if (t.closest('#menuBtn')) { renderDrawer(); return openLayer($('#drawer')); }
+  if (t.closest('#menuBtn')) { initAccounts(); renderDrawer(); return openLayer($('#drawer')); }
   if (t.closest('#scrim')) return closeLayer($('#drawer'));
   if (t.closest('.hero') && !t.closest('.hero-content') && state.heroId) return openDetail(state.heroId);
 });
+/* ---------- Acessibilidade: foco do teclado e leitores de tela ---------- */
+const focusables = el => [...el.querySelectorAll('button,a[href],input,[tabindex="0"]')].filter(b => b.getClientRects().length);
+const focusStack = [];
+// ao abrir menu, janela ou página, o foco vai para dentro dela; ao fechar, volta para onde estava
+function focusInto(el){
+  focusStack.push(document.activeElement);
+  setTimeout(() => (el.querySelector('[data-close],[role="menuitem"]') || focusables(el)[0])?.focus({ preventScroll: true }), 60);
+}
+function focusBack(){
+  const el = focusStack.pop();
+  if (el && el !== document.body && document.contains(el)) el.focus({ preventScroll: true });
+  else document.activeElement?.blur(); // não deixa o foco preso num elemento que vai sumir
+}
+const topLayer = () => modalOpen() ? $('#modal') : $('.hero-content.menu-on .hmenu') || state.layers[state.layers.length - 1];
+// capas e cartões clicáveis também funcionam com o teclado e são lidos como botões
+const a11y = () => document.querySelectorAll('[data-open]:not(button):not(a):not([tabindex])').forEach(el => {
+  el.tabIndex = 0; el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', 'Abrir ' + (el.querySelector('.poster-t,p,h4') || el).textContent.trim());
+});
+new MutationObserver(a11y).observe(document.body, { childList: true, subtree: true });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') return modalOpen() ? closeModal() : closeLayer();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[role="button"]:not(button)')) { e.preventDefault(); return e.target.click(); }
+  const box = topLayer();
+  // Tab não escapa da janela aberta
+  if (e.key === 'Tab' && box) {
+    const f = focusables(box), i = f.indexOf(document.activeElement);
+    if (f.length && (i < 0 || (e.shiftKey && i === 0) || (!e.shiftKey && i === f.length - 1))) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+    return;
+  }
+  // setas percorrem o menu ⋯
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && box?.classList.contains('hmenu')) {
+    e.preventDefault();
+    const f = focusables(box), i = f.indexOf(document.activeElement);
+    return f[(i + (e.key === 'ArrowDown' ? 1 : -1) + f.length) % f.length]?.focus();
+  }
+  if (e.key === 'Escape') return $('.hero-content.menu-on') ? closeMenu() : modalOpen() ? closeModal() : closeLayer();
   if (e.key === 'Enter' && modalOpen() && $('#su-email')) signup();
 });
 // desktop: mouse saindo pelo topo da janela (indo fechar a aba) mostra o convite, uma vez por visita
@@ -1604,7 +1376,11 @@ const userDoc = () => fb.F.doc(fb.db, 'users', state.user.uid);
 const slim = x => x && JSON.parse(JSON.stringify((({ id, tid, type, live, full, t, o, y, tscore, iscore, vc, gids, g, s, p, ps, dur, img }) =>
   ({ id, tid, type, live, full, t, o, y, tscore, iscore, vc, gids, g, s, p, ps, dur, img }))(x)));
 
-async function initAccounts(){
+// o Firebase (login e sincronização) só é baixado para quem já entrou alguma vez, ou quando a pessoa vai entrar
+let accountsP = null;
+const hadAccount = () => { try { return !!localStorage.getItem('oqvh_acct') || !!state.profile.registered; } catch { return false; } };
+function initAccounts(){ return accountsP ||= loadAccounts(); }
+async function loadAccounts(){
   if (!accountsOn()) return;
   try {
     const base = 'https://www.gstatic.com/firebasejs/11.0.2/';
@@ -1613,11 +1389,12 @@ async function initAccounts(){
     fb = { auth: A.getAuth(a), db: F.getFirestore(a), A, F };
     A.onAuthStateChanged(fb.auth, async user => {
       state.user = user;
+      try { user ? localStorage.setItem('oqvh_acct', '1') : localStorage.removeItem('oqvh_acct'); } catch {}
       if (user) await pullAndMerge(user);
       renderDrawer();
       if ($('#page-profile').classList.contains('on')) renderProfile();
     });
-  } catch (e) { console.warn('Contas indisponíveis:', e); fb = null; }
+  } catch (e) { console.warn('Contas indisponíveis:', e); fb = null; accountsP = null; }
 }
 
 // junta duas versões dos dados (este aparelho e a conta): vale o que foi feito por último em cada título,
@@ -1708,8 +1485,9 @@ function openInBrowser(){
     <button class="mlink" data-closemodal>Agora não</button>`);
 }
 async function login(){
-  if (!fb) return toast('Login indisponível no momento');
   if (inAppBrowser()) return openInBrowser();
+  if (!fb) await initAccounts();
+  if (!fb) return toast('Login indisponível no momento');
   const provider = new fb.A.GoogleAuthProvider();
   justSignedIn = true;
   try { await fb.A.signInWithPopup(fb.auth, provider); closeModal(); closeLayer($('#drawer')); }
@@ -1740,7 +1518,7 @@ syncSeg();
 renderDrawer();
 heroSkeleton();
 topsSkeleton();
-initAccounts();
+if (hadAccount()) initAccounts();
 loadDaily().then(daily => {
   state.daily = daily;
   state.live = !daily && !!tmdbKey();

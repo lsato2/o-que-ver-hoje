@@ -173,7 +173,9 @@ for (const type of ['movie', 'tv']) {
 if (problems.length) throw new Error('Dados do dia reprovados na conferência: ' + problems.join('; '));
 if (failed.length) console.log(`${failed.length} títulos pulados por erro no TMDB`);
 
-fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), netflixWeek, tops, items }));
+// sinopses num arquivo à parte: a página inicial abre mais rápido e elas chegam logo em seguida
+fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString(), netflixWeek, tops, items: items.map(({ s, ...x }) => x) }));
+fs.writeFileSync('syn.json', JSON.stringify(Object.fromEntries(items.map(x => [x.id, x.s]))));
 
 // 3c) Arquivo dos títulos dos últimos 120 dias: quem recebeu um link antigo ainda vê a capa e abre o título
 const today = new Date().toISOString().slice(0, 10);
