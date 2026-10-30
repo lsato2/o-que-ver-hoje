@@ -157,21 +157,18 @@ fs.writeFileSync('data.json', JSON.stringify({ updated: new Date().toISOString()
 // 4) Uma página por título para o link compartilhado mostrar a capa no WhatsApp.
 //    O WhatsApp não roda JavaScript: a prévia vem das tags og:* da própria página, que depois redireciona para o site.
 const SITE = 'https://lsato2.github.io/o-que-ver-hoje/';
-const PF_NAME = { netflix: 'Netflix', prime: 'Prime Video', disney: 'Disney+', hbo: 'HBO Max', apple: 'Apple TV', paramount: 'Paramount+' };
 const html = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 fs.mkdirSync('t', { recursive: true });
 for (const x of items) {
   const dest = `${SITE}?t=${x.id}`;
-  const nota = x.ir ? `IMDb ${x.ir}` : x.ts ? `TMDB ${x.ts}` : '';
-  const desc = [PF_NAME[x.p] && `Onde assistir: ${PF_NAME[x.p]}`, nota].filter(Boolean).join(' · ')
-    + ' — ' + (x.s.length > 150 ? x.s.slice(0, 147).replace(/\s+\S*$/, '') + '…' : x.s);
+  const kind = x.type === 'movie' ? 'Filme' : 'Série';
   const img = x.img[0] ? `https://image.tmdb.org/t/p/w500${x.img[0]}` : `${SITE}og.jpg`;
   fs.writeFileSync(`t/${x.id}.html`, `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<title>${html(x.t)}${x.y ? ` (${x.y})` : ''} · O que ver hoje</title>
+<title>${kind}: ${html(x.t)}</title>
 <meta property="og:type" content="video.${x.type === 'movie' ? 'movie' : 'tv_show'}">
 <meta property="og:site_name" content="O que ver hoje">
-<meta property="og:title" content="${html(x.t)}${x.y ? ` (${x.y})` : ''}">
-<meta property="og:description" content="${html(desc)}">
+<meta property="og:title" content="${kind}: ${html(x.t)}">
+<meta property="og:description" content="O que ver hoje">
 <meta property="og:url" content="${SITE}t/${x.id}.html">
 <meta property="og:image" content="${img}">
 ${x.img[0] ? '<meta property="og:image:width" content="500"><meta property="og:image:height" content="750">' : ''}
